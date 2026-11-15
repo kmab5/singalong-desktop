@@ -104,17 +104,17 @@ impl Runtime {
         let thread = thread::Builder::new()
             .name("singalong-tracking".into())
             .spawn(move || {
-                worker(
+                worker(WorkerContext {
                     engine,
                     receiver,
                     shared,
-                    cancel_epoch,
+                    epoch: cancel_epoch,
                     publish,
                     factory,
                     lookup,
                     search,
-                    worker_closing,
-                )
+                    closing: worker_closing,
+                })
             })
             .map_err(|_| "Could not start tracking coordinator.")?;
         Ok(Self(Arc::new(Inner {
@@ -209,17 +209,29 @@ impl Runtime {
         }
     }
 }
-fn worker(
-    mut engine: Engine,
+struct WorkerContext {
+    engine: Engine,
     receiver: mpsc::Receiver<Request>,
     shared: Arc<Mutex<RuntimeSnapshot>>,
     epoch: Arc<AtomicU64>,
     publish: Publish,
     factory: Factory,
-    mut lookup: Option<lookup::Coordinator>,
-    mut search: Option<search::Search>,
+    lookup: Option<lookup::Coordinator>,
+    search: Option<search::Search>,
     closing: Arc<AtomicBool>,
-) {
+}
+fn worker(context: WorkerContext) {
+    let WorkerContext {
+        mut engine,
+        receiver,
+        shared,
+        epoch,
+        publish,
+        factory,
+        mut lookup,
+        mut search,
+        closing,
+    } = context;
     let mut geometry_pending: Option<(WindowGeometry, Instant)> = None;
     let mut reader_active = true;
     let mut main_visible = true;
@@ -410,10 +422,10 @@ fn worker(
                     _ => {}
                 }
                 let result = engine.apply(action);
-                if engine.settings.offline {
-                    if let Some(search) = &mut search {
-                        search.cancel();
-                    }
+                if engine.settings.offline
+                    && let Some(search) = &mut search
+                {
+                    search.cancel();
                 }
                 if !engine.settings.tracking_enabled {
                     adapter = None;
@@ -433,13 +445,12 @@ fn worker(
         if geometry_pending
             .as_ref()
             .is_some_and(|(_, at)| at.elapsed() >= Duration::from_millis(300))
+            && let Some((value, _)) = geometry_pending.take()
         {
-            if let Some((value, _)) = geometry_pending.take() {
-                let mut settings = engine.settings.clone();
-                settings.overlay_geometry = Some(value);
-                if engine.db.save_settings(settings.clone()).is_ok() {
-                    engine.settings = settings;
-                }
+            let mut settings = engine.settings.clone();
+            settings.overlay_geometry = Some(value);
+            if engine.db.save_settings(settings.clone()).is_ok() {
+                engine.settings = settings;
             }
         }
         if adapter.as_ref().is_some_and(|a| a.changed()) {

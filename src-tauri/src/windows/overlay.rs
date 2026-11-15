@@ -60,11 +60,11 @@ pub fn install(app: &tauri::App) -> tauri::Result<()> {
     .visible(false)
     .center()
     .build()?;
-    if let Ok(settings) = app.state::<crate::storage::Storage>().settings() {
-        if let Some(geometry) = settings.overlay_geometry {
-            let _ = restore_geometry(&window, geometry);
-            app.state::<Control>().0.lock().unwrap().applied_mode = Some(settings.overlay_mode);
-        }
+    if let Ok(settings) = app.state::<crate::storage::Storage>().settings()
+        && let Some(geometry) = settings.overlay_geometry
+    {
+        let _ = restore_geometry(&window, geometry);
+        app.state::<Control>().0.lock().unwrap().applied_mode = Some(settings.overlay_mode);
     }
     let handle = app.handle().clone();
     let tracked = window.clone();
@@ -82,10 +82,11 @@ pub fn install(app: &tauri::App) -> tauri::Result<()> {
                 .0
                 .try_lock()
                 .is_ok_and(|policy| !policy.collapsed && !policy.docked);
-            if persist && !tracked.is_minimized().unwrap_or(false) {
-                if let Some(geometry) = remember(&tracked) {
-                    handle.state::<Runtime>().geometry(geometry);
-                }
+            if persist
+                && !tracked.is_minimized().unwrap_or(false)
+                && let Some(geometry) = remember(&tracked)
+            {
+                handle.state::<Runtime>().geometry(geometry);
             }
         }
         _ => {}
@@ -288,30 +289,6 @@ pub fn system_hidden(app: &tauri::AppHandle, hidden: bool) {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::Policy;
-    #[test]
-    fn automatic_display_is_opt_in_and_manual_hide_wins() {
-        let mut p = Policy::default();
-        assert!(!p.automatic(true));
-        p.preference(true);
-        assert!(p.automatic(true));
-        p.manual(false);
-        assert!(!p.automatic(true));
-        p.preference(true);
-        assert!(!p.automatic(true));
-        p.manual(true);
-        assert!(p.automatic(false));
-        p.manual(false);
-        p.preference(false);
-        p.preference(true);
-        assert!(!p.automatic(true));
-        p.suppressed = false;
-        assert!(p.automatic(true));
-    }
-}
-
 fn resize_mode(window: &tauri::WebviewWindow, mode: OverlayMode) -> tauri::Result<()> {
     window.set_decorations(true)?;
     window.set_min_size(Some(tauri::LogicalSize::new(160.0, 80.0)))?;
@@ -464,4 +441,28 @@ pub fn recover(app: &tauri::AppHandle) -> tauri::Result<()> {
     }
     mode(app, OverlayMode::Compact)?;
     manual(app, true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Policy;
+    #[test]
+    fn automatic_display_is_opt_in_and_manual_hide_wins() {
+        let mut p = Policy::default();
+        assert!(!p.automatic(true));
+        p.preference(true);
+        assert!(p.automatic(true));
+        p.manual(false);
+        assert!(!p.automatic(true));
+        p.preference(true);
+        assert!(!p.automatic(true));
+        p.manual(true);
+        assert!(p.automatic(false));
+        p.manual(false);
+        p.preference(false);
+        p.preference(true);
+        assert!(!p.automatic(true));
+        p.suppressed = false;
+        assert!(p.automatic(true));
+    }
 }

@@ -590,11 +590,12 @@ fn recordings_resolve(
                     .is_some_and(|r| identity::same_observation(r, &incoming))
             })
         };
-        if let Some(id) = known {
-            if !claimed.contains(&id) && owns_reserved_id(&id, &incoming.id, &reserved) {
-                claimed.insert(id.clone());
-                resolved.insert(incoming.id, id);
-            }
+        if let Some(id) = known
+            && !claimed.contains(&id)
+            && owns_reserved_id(&id, &incoming.id, &reserved)
+        {
+            claimed.insert(id.clone());
+            resolved.insert(incoming.id, id);
         }
     }
     for song in &data.songs {
@@ -693,13 +694,13 @@ fn recordings_resolve(
         db.execute("INSERT INTO recordings(id,title_key,content,favorite,play_count,last_played_ms) VALUES(?1,?2,?3,?4,?5,?6) ON CONFLICT(id) DO UPDATE SET title_key=excluded.title_key,content=excluded.content,favorite=MAX(recordings.favorite,excluded.favorite),play_count=MAX(recordings.play_count,excluded.play_count),last_played_ms=CASE WHEN excluded.last_played_ms IS NULL THEN recordings.last_played_ms WHEN recordings.last_played_ms IS NULL THEN excluded.last_played_ms ELSE MAX(recordings.last_played_ms,excluded.last_played_ms) END",
             params![id, identity::normalize(&stored.title), serde_json::to_string(&stored)?, favorite, count, last])?;
         let map_key = recording_map_key(&song.recording, cancel)?;
-        if let Some(previous) = inert_get(db, &map_key)? {
-            if previous != id {
-                // A stale memo may point at another incoming source's stable ID.
-                // Preserve its historical relationship, but never reuse that ID
-                // or leave an unusable memo that can change ownership next time.
-                retain_recording_original(db, &song.recording, &previous, report, cancel)?;
-            }
+        if let Some(previous) = inert_get(db, &map_key)?
+            && previous != id
+        {
+            // A stale memo may point at another incoming source's stable ID.
+            // Preserve its historical relationship, but never reuse that ID
+            // or leave an unusable memo that can change ownership next time.
+            retain_recording_original(db, &song.recording, &previous, report, cancel)?;
         }
         db.execute(
             "INSERT INTO inert_preferences(key,value) VALUES(?1,?2) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
@@ -998,11 +999,11 @@ fn merge_preferences(
             let values: BTreeMap<String, b::PreferenceValue> = serde_json::from_str(raw)?;
             for (key, value) in values {
                 check(cancel)?;
-                if let Some(old) = inert_get(db, &format!("{INERT}{key}"))? {
-                    if serde_json::from_str::<b::PreferenceValue>(&old)? != value {
-                        compatible = false;
-                        break;
-                    }
+                if let Some(old) = inert_get(db, &format!("{INERT}{key}"))?
+                    && serde_json::from_str::<b::PreferenceValue>(&old)? != value
+                {
+                    compatible = false;
+                    break;
                 }
             }
         }
@@ -1075,14 +1076,13 @@ fn apply_setting(settings: &mut Settings, name: &str, value: &b::PreferenceValue
             }
         }
         ("appearance", b::PreferenceValue::String(v)) => {
-            if let Ok(appearance) = serde_json::from_str::<m::Appearance>(v) {
-                if appearance.opacity.is_finite()
-                    && (0.2..=1.0).contains(&appearance.opacity)
-                    && (14..=64).contains(&appearance.main.text_size)
-                    && (14..=64).contains(&appearance.floating.text_size)
-                {
-                    settings.appearance = appearance;
-                }
+            if let Ok(appearance) = serde_json::from_str::<m::Appearance>(v)
+                && appearance.opacity.is_finite()
+                && (0.2..=1.0).contains(&appearance.opacity)
+                && (14..=64).contains(&appearance.main.text_size)
+                && (14..=64).contains(&appearance.floating.text_size)
+            {
+                settings.appearance = appearance;
             }
         }
         // Never deserialize a whole supplied Settings object into active state.

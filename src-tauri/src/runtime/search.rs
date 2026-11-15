@@ -89,10 +89,11 @@ impl Search {
         }
     }
     fn poll_current(&mut self) {
-        if self.job.is_none() && self.status == LookupStatus::Loading {
-            if let Some(recording) = &self.recording {
-                self.job = self.jobs.start(recording.clone());
-            }
+        if self.job.is_none()
+            && self.status == LookupStatus::Loading
+            && let Some(recording) = &self.recording
+        {
+            self.job = self.jobs.start(recording.clone());
         }
         if let Some((id, result)) = self.jobs.poll()
             && self.job == Some(id)

@@ -206,10 +206,10 @@ mod dialog_cancel {
     }
     unsafe extern "system" fn tick(_: HWND, _: u32, _: usize, _: u32) {
         CURRENT.with(|slot| {
-            if let Some((dialog, cancel)) = slot.borrow().as_ref() {
-                if cancel.cancelled() {
-                    let _ = unsafe { dialog.Close(HRESULT(0x800704c7u32 as i32)) };
-                }
+            if let Some((dialog, cancel)) = slot.borrow().as_ref()
+                && cancel.cancelled()
+            {
+                let _ = unsafe { dialog.Close(HRESULT(0x800704c7u32 as i32)) };
             }
         });
     }

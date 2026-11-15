@@ -291,7 +291,7 @@ pub async fn product_command(
                 }
             }
             C::ResetOverlay => {
-                crate::windows::dispatch(&app, |app| crate::windows::overlay::recover(app))
+                crate::windows::dispatch(&app, crate::windows::overlay::recover)
                     .map_err(|_| failure("Could not recover floating lyrics."))?;
                 runtime
                     .product_for(C::ClickThrough { enabled: false }, overlay)
