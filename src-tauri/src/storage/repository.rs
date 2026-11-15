@@ -7,7 +7,7 @@ use singalong_core::{
 use std::{path::Path, time::Duration};
 
 pub(super) struct Repository {
-    connection: Connection,
+    pub(super) connection: Connection,
 }
 impl Repository {
     pub fn record_play(
@@ -245,8 +245,28 @@ impl Repository {
         Ok(())
     }
     pub fn selected(&mut self, id: String) -> Result<Option<LyricVersion>> {
-        let json:Option<String>=self.connection.query_row("SELECT v.content FROM selections s JOIN lyric_versions v ON v.id=s.version_id WHERE s.recording_id=?",[id],|r|r.get(0)).optional()?;
-        Ok(json.map(|json| serde_json::from_str(&json)).transpose()?)
+        let json:Option<String>=self.connection.query_row("SELECT v.content FROM selections s JOIN lyric_versions v ON v.id=s.version_id WHERE s.recording_id=?",[&id],|r|r.get(0)).optional()?;
+        if let Some(json) = json {
+            return Ok(Some(serde_json::from_str(&json)?));
+        }
+        // A nullable imported selection does not make its saved lyrics unavailable.
+        // Rank for presentation only; never manufacture an explicit stored choice.
+        let content: Option<String> = self
+            .connection
+            .query_row("SELECT content FROM recordings WHERE id=?", [&id], |r| {
+                r.get(0)
+            })
+            .optional()?;
+        let recording = content
+            .map(|value| serde_json::from_str::<Recording>(&value))
+            .transpose()?;
+        let mut versions = self.versions(id)?;
+        singalong_core::lyrics::preference::sort(
+            &mut versions,
+            recording.and_then(|r| r.duration_ms).map(|d| d.value()),
+        );
+        versions.sort_by_key(|v| !matches!(v.origin, singalong_core::model::LyricOrigin::Personal));
+        Ok(versions.into_iter().next())
     }
     pub fn adjust(&mut self, id: String, delay: i64, estimated: bool) -> Result<()> {
         if !(-600000..=600000).contains(&delay) {

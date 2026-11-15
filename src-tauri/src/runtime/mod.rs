@@ -1,4 +1,6 @@
 pub mod lookup;
+mod product;
+mod search;
 pub mod tracking;
 use crate::{
     platform::{Adapter, Cancellation, NativeAdapter},
@@ -8,7 +10,7 @@ use singalong_core::model::*;
 use std::{
     sync::{
         Arc, Mutex,
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         mpsc,
     },
     thread::{self, JoinHandle},
@@ -17,6 +19,20 @@ use std::{
 use tracking::Engine;
 type Reply = mpsc::SyncSender<Result<(), String>>;
 enum Request {
+    Restore(
+        std::sync::Arc<singalong_core::backup::BackupData>,
+        bool,
+        Cancellation,
+        mpsc::SyncSender<Result<crate::storage::MergeReport, String>>,
+    ),
+    Docked(bool),
+    Geometry(WindowGeometry),
+    Collapsed(bool),
+    Product(
+        bool,
+        ProductCommand,
+        mpsc::SyncSender<Result<ProductReply, String>>,
+    ),
     OverlayVisible(bool),
     MainVisible(bool),
     Action(u64, RuntimeAction, Reply),
@@ -30,6 +46,7 @@ struct Inner {
     sender: mpsc::Sender<Request>,
     snapshot: Arc<Mutex<RuntimeSnapshot>>,
     epoch: Arc<AtomicU64>,
+    closing: Arc<AtomicBool>,
     thread: Mutex<Option<JoinHandle<()>>>,
 }
 impl Drop for Inner {
@@ -47,15 +64,18 @@ impl Drop for Inner {
 pub struct Runtime(Arc<Inner>);
 impl Runtime {
     pub fn native(db: Storage, publish: Publish) -> Result<Self, String> {
+        let jobs = crate::providers::Worker::new()?;
+        let search = search::Search::new(db.clone(), Box::new(jobs.fork()));
         Self::spawn_inner(
             db,
             publish,
             Box::new(|c| NativeAdapter::new(c).map(|a| Box::new(a) as Box<dyn Adapter>)),
-            Some(Box::new(crate::providers::Worker::new()?)),
+            Some(Box::new(jobs)),
+            Some(search),
         )
     }
     pub fn spawn(db: Storage, publish: Publish, factory: Factory) -> Result<Self, String> {
-        Self::spawn_inner(db, publish, factory, None)
+        Self::spawn_inner(db, publish, factory, None, None)
     }
     pub fn spawn_with_jobs(
         db: Storage,
@@ -63,13 +83,14 @@ impl Runtime {
         factory: Factory,
         jobs: Box<dyn lookup::Jobs>,
     ) -> Result<Self, String> {
-        Self::spawn_inner(db, publish, factory, Some(jobs))
+        Self::spawn_inner(db, publish, factory, Some(jobs), None)
     }
     fn spawn_inner(
         db: Storage,
         publish: Publish,
         factory: Factory,
         jobs: Option<Box<dyn lookup::Jobs>>,
+        search: Option<search::Search>,
     ) -> Result<Self, String> {
         let lookup = jobs.map(|jobs| lookup::Coordinator::new(db.clone(), jobs));
         let engine = Engine::new(db)?;
@@ -77,6 +98,8 @@ impl Runtime {
         let shared = snapshot.clone();
         let epoch = Arc::new(AtomicU64::new(0));
         let cancel_epoch = epoch.clone();
+        let closing = Arc::new(AtomicBool::new(false));
+        let worker_closing = closing.clone();
         let (sender, receiver) = mpsc::channel();
         let thread = thread::Builder::new()
             .name("singalong-tracking".into())
@@ -89,6 +112,8 @@ impl Runtime {
                     publish,
                     factory,
                     lookup,
+                    search,
+                    worker_closing,
                 )
             })
             .map_err(|_| "Could not start tracking coordinator.")?;
@@ -96,6 +121,7 @@ impl Runtime {
             sender,
             snapshot,
             epoch,
+            closing,
             thread: Mutex::new(Some(thread)),
         })))
     }
@@ -103,6 +129,9 @@ impl Runtime {
         self.0.snapshot.lock().unwrap().clone()
     }
     pub fn action(&self, action: RuntimeAction) -> Result<(), String> {
+        if self.0.closing.load(Ordering::SeqCst) {
+            return Err("Singalong is quitting.".into());
+        }
         let generation = self.0.epoch.fetch_add(1, Ordering::SeqCst) + 1;
         let (tx, rx) = mpsc::sync_channel(1);
         self.0
@@ -110,6 +139,49 @@ impl Runtime {
             .send(Request::Action(generation, action, tx))
             .map_err(|_| "Tracking has stopped.")?;
         rx.recv().map_err(|_| "Tracking has stopped.")?
+    }
+    pub fn product(&self, command: ProductCommand) -> Result<ProductReply, String> {
+        self.product_for(command, false)
+    }
+    pub fn product_for(
+        &self,
+        command: ProductCommand,
+        overlay: bool,
+    ) -> Result<ProductReply, String> {
+        if self.0.closing.load(Ordering::SeqCst) {
+            return Err("Singalong is quitting.".into());
+        }
+        let (tx, rx) = mpsc::sync_channel(1);
+        self.0
+            .sender
+            .send(Request::Product(overlay, command, tx))
+            .map_err(|_| "Tracking has stopped.")?;
+        rx.recv().map_err(|_| "The operation could not finish.")?
+    }
+    pub fn docked(&self, value: bool) {
+        let _ = self.0.sender.send(Request::Docked(value));
+    }
+    pub fn geometry(&self, value: WindowGeometry) {
+        let _ = self.0.sender.send(Request::Geometry(value));
+    }
+    pub fn collapsed(&self, value: bool) {
+        let _ = self.0.sender.send(Request::Collapsed(value));
+    }
+    pub fn restore(
+        &self,
+        data: std::sync::Arc<singalong_core::backup::BackupData>,
+        settings: bool,
+        cancel: Cancellation,
+    ) -> Result<crate::storage::MergeReport, String> {
+        if self.0.closing.load(Ordering::SeqCst) {
+            return Err("Singalong is quitting.".into());
+        }
+        let (tx, rx) = mpsc::sync_channel(1);
+        self.0
+            .sender
+            .send(Request::Restore(data, settings, cancel, tx))
+            .map_err(|_| "Application stopped.")?;
+        rx.recv().map_err(|_| "Restore could not finish.")?
     }
     pub fn close_notice(&self) {
         let _ = self.0.sender.send(Request::Close);
@@ -124,7 +196,12 @@ impl Runtime {
         let generation = self.0.epoch.fetch_add(1, Ordering::SeqCst) + 1;
         let _ = self.0.sender.send(Request::Suspend(generation, suspended));
     }
+    pub fn begin_shutdown(&self) {
+        self.0.closing.store(true, Ordering::SeqCst);
+        self.0.epoch.fetch_add(1, Ordering::SeqCst);
+    }
     pub fn shutdown(&self) {
+        self.begin_shutdown();
         self.0.epoch.fetch_add(1, Ordering::SeqCst);
         let _ = self.0.sender.send(Request::Quit);
         if let Some(t) = self.0.thread.lock().unwrap().take() {
@@ -140,7 +217,10 @@ fn worker(
     publish: Publish,
     factory: Factory,
     mut lookup: Option<lookup::Coordinator>,
+    mut search: Option<search::Search>,
+    closing: Arc<AtomicBool>,
 ) {
+    let mut geometry_pending: Option<(WindowGeometry, Instant)> = None;
     let mut reader_active = true;
     let mut main_visible = true;
     let started = Instant::now();
@@ -177,7 +257,90 @@ fn worker(
         publish(value);
     };
     loop {
-        match receiver.recv_timeout(Duration::from_millis(100)) {
+        if closing.load(Ordering::SeqCst) {
+            break;
+        }
+        let request = receiver.recv_timeout(Duration::from_millis(100));
+        if closing.load(Ordering::SeqCst) {
+            break;
+        }
+        match request {
+            Ok(Request::Restore(data, settings, cancel, reply)) => {
+                engine.discard_pending_occurrence();
+                if let Some(search) = &mut search {
+                    search.cancel();
+                }
+                if let Some(lookup) = &mut lookup {
+                    lookup.reset();
+                }
+                let result = if cancel.cancelled() {
+                    Err("Restore cancelled.".into())
+                } else {
+                    engine
+                        .db
+                        .backup_merge(data, settings, false, cancel)
+                        .map_err(|e| e.to_string())
+                };
+                if result.is_ok() {
+                    if let Ok(settings) = engine.db.settings() {
+                        engine.snapshot.appearance = settings.appearance.clone();
+                        engine.snapshot.overlay_mode = settings.overlay_mode;
+                        engine.settings = settings;
+                    }
+                    if let Some(lookup) = &mut lookup {
+                        lookup.refresh_saved();
+                    }
+                }
+                emit(
+                    &mut engine,
+                    &mut revision,
+                    processed,
+                    &mut lookup,
+                    reader_active && main_visible,
+                );
+                let _ = reply.send(result);
+            }
+            Ok(Request::Docked(value)) => {
+                engine.snapshot.overlay_docked = value;
+                emit(
+                    &mut engine,
+                    &mut revision,
+                    processed,
+                    &mut lookup,
+                    reader_active && main_visible,
+                );
+            }
+            Ok(Request::Geometry(value)) => {
+                geometry_pending = Some((value, Instant::now()));
+            }
+            Ok(Request::Collapsed(value)) => {
+                engine.snapshot.overlay_collapsed = value;
+                emit(
+                    &mut engine,
+                    &mut revision,
+                    processed,
+                    &mut lookup,
+                    reader_active && main_visible,
+                );
+            }
+            Ok(Request::Product(overlay, command, reply)) => {
+                let result = product::execute(
+                    &mut engine,
+                    &mut lookup,
+                    &mut search,
+                    command,
+                    started.elapsed().as_millis() as u64,
+                    overlay,
+                );
+                emit(
+                    &mut engine,
+                    &mut revision,
+                    processed,
+                    &mut lookup,
+                    reader_active && main_visible,
+                );
+                let _ = reply.send(result);
+            }
             Ok(Request::OverlayVisible(visible)) => {
                 engine.snapshot.overlay_visible = visible;
                 emit(
@@ -247,6 +410,11 @@ fn worker(
                     _ => {}
                 }
                 let result = engine.apply(action);
+                if engine.settings.offline {
+                    if let Some(search) = &mut search {
+                        search.cancel();
+                    }
+                }
                 if !engine.settings.tracking_enabled {
                     adapter = None;
                 }
@@ -261,6 +429,18 @@ fn worker(
                 let _ = reply.send(result);
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {}
+        }
+        if geometry_pending
+            .as_ref()
+            .is_some_and(|(_, at)| at.elapsed() >= Duration::from_millis(300))
+        {
+            if let Some((value, _)) = geometry_pending.take() {
+                let mut settings = engine.settings.clone();
+                settings.overlay_geometry = Some(value);
+                if engine.db.save_settings(settings.clone()).is_ok() {
+                    engine.settings = settings;
+                }
+            }
         }
         if adapter.as_ref().is_some_and(|a| a.changed()) {
             refresh = Instant::now();
@@ -341,7 +521,12 @@ fn worker(
             reader_active && main_visible,
         );
     }
+    if let Some((value, _)) = geometry_pending.take() {
+        engine.settings.overlay_geometry = Some(value);
+        let _ = engine.db.save_settings(engine.settings.clone());
+    }
     drop(adapter);
+    drop(search.take());
     drop(lookup.take());
     engine.snapshot.reader = ReaderState::default();
     engine.unavailable("Tracking stopped");
@@ -378,6 +563,10 @@ fn reconcile(
         now,
         token,
     );
+    if token.cancelled() {
+        return false;
+    }
+    let changed = changed | lookup.take_dirty();
     if changed {
         engine.snapshot.reader = lookup.state.clone();
     }

@@ -7,7 +7,7 @@ use std::collections::HashMap;
 pub struct Engine {
     pub snapshot: RuntimeSnapshot,
     pub settings: Settings,
-    db: Storage,
+    pub(super) db: Storage,
     selector: Selector,
     qualifier: Qualifier,
     records: HashMap<String, Recording>,
@@ -22,12 +22,15 @@ impl Engine {
         let settings = db.settings().map_err(|e| e.to_string())?;
         let mut snapshot = RuntimeSnapshot::foundation();
         snapshot.capabilities.tracking_available = cfg!(windows);
+        snapshot.capabilities.library_available = true;
         snapshot.capabilities.reason="Enable players to follow their exposed Windows media sessions. Saved lyrics remain available offline.".into();
         snapshot.tracking_enabled = settings.tracking_enabled;
         snapshot.selection = settings.selection.clone();
         snapshot.start_at_sign_in = settings.start_at_sign_in;
         snapshot.auto_overlay = settings.auto_overlay;
         snapshot.offline = settings.offline;
+        snapshot.appearance = settings.appearance.clone();
+        snapshot.overlay_mode = settings.overlay_mode;
         snapshot.players = settings
             .enabled_players
             .iter()
@@ -158,6 +161,14 @@ impl Engine {
             .iter()
             .find(|s| Some(&s.session_id) == self.snapshot.selected_session_id.as_ref())
             .cloned()
+    }
+    pub fn discard_pending_occurrence(&mut self) {
+        self.pending = None;
+    }
+    pub fn clear_history(&mut self) -> Result<(), String> {
+        self.db.clear_history().map_err(|e| e.to_string())?;
+        self.discard_pending_occurrence();
+        Ok(())
     }
     pub fn qualified_id(&self, recording: &str) -> Option<String> {
         if self

@@ -7,6 +7,7 @@ fn main() {
                 "get_snapshot",
                 "get_diagnostics",
                 "runtime_action",
+                "product_command",
             ]),
         ))
         .expect("build Tauri resources and permissions");

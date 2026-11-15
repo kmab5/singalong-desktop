@@ -1,0 +1,7 @@
+import {useState} from 'react';
+import {message,type Product} from '../library/Search';
+export function LibraryData({product}:{product:Product}) {
+ const [confirm,setConfirm]=useState<'clear_downloads'|'clear_history'>();const [status,setStatus]=useState('');const [busy,setBusy]=useState(false);
+ async function clear(){if(!confirm)return;setBusy(true);try{await product({kind:confirm});setStatus(confirm==='clear_downloads'?'Downloaded lyrics cleared.':'Listening counts and history cleared.');setConfirm(undefined);}catch(e){setStatus(message(e));}finally{setBusy(false);}}
+ return <section className="settings"><h2>Local library data</h2><p>Downloaded provider lyrics can be removed from songs that are not favourites. Imported lyrics and personal edits are retained.</p><button disabled={busy} onClick={()=>setConfirm('clear_downloads')}>Clear downloaded lyrics</button><button disabled={busy} onClick={()=>setConfirm('clear_history')}>Clear listening history</button>{confirm&&<div role="alertdialog" aria-label="Confirm local data removal"><p>{confirm==='clear_downloads'?'Remove downloaded provider lyrics from non-favourite songs? Metadata, favourites and personal/imported lyrics stay.':'Clear all play counts and listening dates? Saved lyrics and favourites stay.'}</p><button disabled={busy} onClick={()=>void clear()}>Confirm removal</button><button disabled={busy} onClick={()=>setConfirm(undefined)}>Cancel</button></div>}{status&&<p role="status">{status}</p>}</section>;
+}

@@ -1,0 +1,32 @@
+name: Build Windows candidate artifact
+on:
+  workflow_dispatch:
+    inputs:
+      tauri_cli_version:
+        description: Exact Tauri 2 CLI version selected for this candidate (x.y.z)
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+          cache: npm
+      - run: npm ci
+      - run: rustup show
+      - name: Build installer (no publication)
+        shell: pwsh
+        env:
+          TAURI_CLI_VERSION: ${{ inputs.tauri_cli_version }}
+        run: ./scripts/package-windows.ps1 -TauriCliVersion $env:TAURI_CLI_VERSION
+      - uses: actions/upload-artifact@v4
+        with:
+          name: singalong-windows-candidate
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 7

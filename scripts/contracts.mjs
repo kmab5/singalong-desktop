@@ -18,8 +18,12 @@ ajv.addFormat('uint64-decimal', value => /^(0|[1-9][0-9]{0,19})$/.test(value) &&
 ajv.addFormat('uint8', true);
 ajv.addFormat('uint32', true);
 ajv.addFormat('double', true);
+ajv.addFormat('float', true);
+ajv.addFormat('int32', true);
 const validate = ajv.compile({ $ref: '#/definitions/RuntimeSnapshot', definitions: schema.definitions });
+const validateProduct = ajv.compile({ $ref: '#/definitions/ProductReply', definitions: schema.definitions });
 const files = new Map([
+  ['src/bridge/validate-product.generated.js', '// Generated from the Rust contract; do not edit.\n' + standaloneCode(ajv, validateProduct) + '\n'],
   ['src/bridge/contract.schema.json', JSON.stringify(schema, null, 2) + '\n'],
   ['src/bridge/types.ts', await compile(schema, 'Contract', { bannerComment: '/* Generated from Rust. Run npm run contract:generate; do not edit. */', additionalProperties: false })],
   ['src/bridge/validate.generated.js', '// Generated from the Rust contract; do not edit.\n' + standaloneCode(ajv, validate) + '\n'],

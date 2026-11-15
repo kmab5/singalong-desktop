@@ -3,5 +3,5 @@
   "description": "Floating reader may only receive shared state.",
   "local": true,
   "windows": ["overlay"],
-  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten", "allow-get-snapshot"]
+  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten", "allow-get-snapshot", "allow-product-command"]
 }

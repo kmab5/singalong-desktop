@@ -1,6 +1,7 @@
-import type { RuntimeSnapshot, RuntimeAction } from './types';
+import type { RuntimeSnapshot, RuntimeAction, ProductCommand, ProductReply } from './types';
 import validate from './validate.generated.js';
 export interface Transport {
+  product?(command: ProductCommand): Promise<ProductReply>;
   action?(action: RuntimeAction): Promise<void>;
   snapshot(): Promise<unknown>;
   subscribe(callback: (state: unknown) => void): Promise<() => void>;

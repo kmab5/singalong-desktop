@@ -10,6 +10,7 @@ async function start() {
   const root = createRoot(document.getElementById('root')!);
   if (isTauri()) {
     const transport=createNative();
+    if(new URLSearchParams(location.search).has('overlay'))document.documentElement.classList.add('floating-document');
     root.render(<React.StrictMode>{new URLSearchParams(location.search).has('overlay') ? <FloatingReader transport={transport} /> : <App transport={transport} />}</React.StrictMode>);
   } else if (__FIXTURE__) {
     const { createFixture } = await import('./bridge/fixture');

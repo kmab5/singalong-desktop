@@ -2,7 +2,7 @@
 
 Desktop port of the [Singalong Android lyrics companion](https://kmab5.github.io/singalong/), planned for Windows first with Tauri 2, Rust, React, TypeScript and Vite.
 
-The native application foundation runs with React/TypeScript, validated Rust IPC and a local SQLite worker. Enabled Windows playback tracking, selection/pinning and qualified history are connected. Lyric lookup, the floating reader and a usable Preview A are still upcoming. See [foundation evidence](plan/evidence/foundation.md), [storage evidence](plan/evidence/storage.md) and the [native probes](src-tauri/README.md).
+The native application foundation runs with React/TypeScript, validated Rust IPC and a local SQLite worker. Enabled Windows playback tracking, selection/pinning and qualified history are connected. Shared lyric lookup/cache and a basic floating reader are implemented. First-stable reader controls, floating modes, library/search, backup migration, settings and packaging configuration are implemented in source. Testing is paused at the user’s request; source changes are not a verified preview or stable release. See [current implementation progress](plan/evidence/stable-implementation.md), [foundation evidence](plan/evidence/foundation.md), [storage evidence](plan/evidence/storage.md) and the [native probes](src-tauri/README.md).
 
 See [tracking evidence and remaining gates](plan/evidence/tracking.md) for close-to-tray, startup and lifecycle verification.
 

@@ -146,9 +146,9 @@ Evidence: [P2 tracking and lifecycle](evidence/tracking.md). Native integration 
 **Produces:** Revisioned reader state and accessible synchronized/manual reading.
 
 - [ ] Port playback clock, blank-marker countdown, delay sign and estimated-timeline fixtures.
-- [ ] Implement supplied line/word highlighting and separately labelled optional visual estimates.
-- [ ] Add follow/manual scrolling, resume, version choice, retry, ±offset, reset and align-line controls.
-- [ ] Add independent text sizes, alignment and word switches plus reduced-motion support. Defer glow and detailed motion settings. Maintain accessible full text.
+- [x] Implement supplied line/word highlighting and separately labelled optional visual estimates.
+- [x] Add follow/manual scrolling, resume, version choice, retry, ±offset, reset and align-line controls.
+- [x] Add independent text sizes, alignment and word switches plus reduced-motion support. Defer glow and detailed motion settings. Maintain accessible full text.
 - [ ] Test missing position/duration, paused seek, same-recording metadata enrichment and song change during lookup.
 - [ ] Gate: synthetic word/line outputs match fixtures; native playback remains correctly anchored after seek/pause.
 
@@ -158,9 +158,9 @@ Evidence: [P2 tracking and lifecycle](evidence/tracking.md). Native integration 
 **Consumes:** P0 window evidence and core P3 lookup/reader state.
 **Produces:** A usable basic reader driven by real Windows playback and local cache.
 
-- [ ] Create a narrow-capability local-content window with show/hide, drag and tray recovery; no duplicate fetch or qualification owner.
-- [ ] Render live lyrics, source/possible-match labels and manual/unavailable states; use saved lyrics offline.
-- [ ] Keep automatic display opt-in; explicit hide wins. Hide on lock and stop unnecessary hidden rendering.
+- [x] Create a narrow-capability local-content window with show/hide, drag and tray recovery; no duplicate fetch or qualification owner.
+- [x] Render live lyrics, source/possible-match labels and manual/unavailable states; use saved lyrics offline.
+- [x] Keep automatic display opt-in; explicit hide wins. Hide on lock and stop unnecessary hidden rendering.
 - [ ] Exercise real playback, stop/restart, cached reopen and missing position; record evidence before calling Preview A usable.
 
 ### P4 — Implement floating reader parity
@@ -169,11 +169,11 @@ Evidence: [P2 tracking and lifecycle](evidence/tracking.md). Native integration 
 **Consumes:** P4a window, shared reader state, per-context follow controls and P0 evidence.
 **Produces:** Recoverable compact/expanded/minimal overlay.
 
-- [ ] Port OverlayState and geometry cases: 15-second pause, 8-second unavailable grace, retry reset and manual-state persistence.
-- [ ] Add logical-unit monitor-aware geometry, edge handle, minimum readable sizes and Reset position.
-- [ ] Implement separate floating sizes/alignment/opacity and supplied-word-only highlighting.
-- [ ] Add optional click-through with always-available tray recovery, normal interaction default and default capture visibility. Capture exclusion stays deferred.
-- [ ] Suppress on lock/suspend, avoid focus stealing and stop hidden animation work.
+- [x] Port OverlayState and geometry cases: 15-second pause, 8-second unavailable grace, retry reset and manual-state persistence.
+- [x] Add logical-unit monitor-aware geometry, edge handle, minimum readable sizes and Reset position.
+- [x] Implement separate floating sizes/alignment/opacity and supplied-word-only highlighting.
+- [x] Add optional click-through with always-available tray recovery, normal interaction default and default capture visibility. Capture exclusion stays deferred.
+- [x] Suppress on lock/suspend, avoid focus stealing and stop hidden animation work.
 - [ ] Test main-window saved-song browsing while the overlay stays live; add Return to Now. Test shared version/offset changes without duplicate fetching/qualification.
 - [ ] Gate: native checklist passes on every advertised OS/compositor; unsupported controls are absent or explained.
 
@@ -183,12 +183,12 @@ Evidence: [P2 tracking and lifecycle](evidence/tracking.md). Native integration 
 **Consumes:** Storage, provider search and reader APIs.
 **Produces:** Offline reading, search/favorites/sort and lookup recovery without requiring playback.
 
-- [ ] Build library search/favorites and deterministic sorting using retained play counts/last-played dates. Defer the separate History screen.
-- [ ] Implement title/artist search with no active playback, review candidates and save selected lyrics.
-- [ ] Add Wrong lyrics, alternate versions and corrected title/artist/album query fields; never overwrite original playback metadata.
-- [ ] Show source, Possible match and timing labels; preserve explicit selected versions including imported personal edits.
-- [ ] Keep saved-song reading independent of live overlay and expose Return to Now.
-- [ ] Add separate Clear downloads / Clear history actions. Preserve favorites and personal/imported content; invalidate pending writes before deletion.
+- [x] Build library search/favorites and deterministic sorting using retained play counts/last-played dates. Defer the separate History screen.
+- [x] Implement title/artist search with no active playback, review candidates and save selected lyrics.
+- [x] Add Wrong lyrics, alternate versions and corrected title/artist/album query fields; never overwrite original playback metadata.
+- [x] Show source, Possible match and timing labels; preserve explicit selected versions including imported personal edits.
+- [x] Keep saved-song reading independent of live overlay and expose Return to Now.
+- [x] Add separate Clear downloads / Clear history actions. Preserve favorites and personal/imported content; invalidate pending writes before deletion.
 - [ ] Gate: offline reopen retains selected versions, no-player search works, and deletion races cannot resurrect cleared content.
 
 ### P5.2 — Later: selected-folder lookup
@@ -222,10 +222,10 @@ Evidence: [P2 tracking and lifecycle](evidence/tracking.md). Native integration 
 **Produces:** Previewed atomic merge, full desktop export/restore and retained migration data.
 
 - [ ] Capture synthetic fixtures from the pinned Android codec; record input provenance and expected decoded objects.
-- [ ] Implement exact schema-1 JSON/ZIP import and security/size validation from the compatibility document.
+- [x] Implement exact schema-1 JSON/ZIP import and security/size validation from the compatibility document.
 - [ ] Implement preview token, deterministic collision remapping and idempotent merge tests.
-- [ ] Import supported Android all/preferred and full/links/none archives, preserving omitted-section semantics. Export a full desktop backup; defer selective export controls.
-- [ ] Preserve current tracking/consent/startup registration and network policy. Retain translations and valid unsupported Android settings as inert data; report restored versus retained/unapplied content. Apply supported settings only if selected, atomically with library data.
+- [x] Import supported Android all/preferred and full/links/none archives, preserving omitted-section semantics. Export a full desktop backup; defer selective export controls.
+- [x] Preserve current tracking/consent/startup registration and network policy. Retain translations and valid unsupported Android settings as inert data; report restored versus retained/unapplied content. Apply supported settings only if selected, atomically with library data.
 - [ ] Define a versioned full desktop format and verify desktop-to-desktop round trips, including inert translation/preference data. Reverse Android export is deferred.
 - [ ] Test ZIP64, large/unlimited archives, corrupt hashes/headers, settings errors, disk-full and repeated restore.
 - [ ] Gate: Android migration preserves content/edits/timing/provenance without duplicates or silently re-enabling tracking.
@@ -272,9 +272,9 @@ Evidence: [P2 tracking and lifecycle](evidence/tracking.md). Native integration 
 **Consumes:** Completed feature scope and native evidence.
 **Produces:** Installable, honestly documented candidate release.
 
-- [ ] Complete essential settings/reset, opt-in sign-in startup, bounded local diagnostics and user-reviewed export.
-- [ ] Add Check for updates opening the release page; updates are manually installed. No automatic updater in stable.
-- [ ] Bundle release notes for offline About and share content with the future site.
+- [x] Complete essential settings/reset, opt-in sign-in startup, bounded local diagnostics and user-reviewed export.
+- [x] Add Check for updates opening the release page; updates are manually installed. No automatic updater in stable.
+- [x] Bundle release notes for offline About and share content with the future site.
 - [ ] Carry source/font notices; review desktop dependency licenses and provider disclosures.
 - [ ] Verify the mandatory Windows player/browser matrix, installer, clean install, update retaining data, uninstall behavior and signing. Test secondary players and document limitations; defer other platforms.
 - [ ] Keep updater signing separate from OS signing if an updater is later added; never embed private keys.
@@ -292,6 +292,10 @@ Evidence: [P2 tracking and lifecycle](evidence/tracking.md). Native integration 
 - [ ] Use original/synthetic illustrative content without user lyrics or private data.
 - [ ] Test responsive/keyboard/reduced-motion/no-JS content and release-download fallback.
 - [ ] Gate: site build leaves root-level `plan/` byte-identical and the deployed artifact excludes plans, agent guidance and implementation evidence; deployment requires a separate request.
+
+## Implementation-only checkpoint
+
+The checked production-source items above are implemented in the current working branch. They are **not** build/test/native verification claims. The user paused testing while the full first-stable source was completed. Mixed implementation/test items and release gates remain unchecked. Source-review corrections and remaining dependencies are tracked in [stable implementation evidence](evidence/stable-implementation.md).
 
 ## Task handoff record
 

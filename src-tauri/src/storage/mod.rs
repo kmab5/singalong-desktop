@@ -1,3 +1,6 @@
+mod backup;
+mod library;
+pub use backup::MergeReport;
 mod repository;
 mod settings;
 use repository::Repository;

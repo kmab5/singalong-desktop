@@ -9,13 +9,30 @@ use std::{
     },
     thread::{self, JoinHandle},
 };
-
-/// Bounded, serial HTTP owner. Results are proposals; only the coordinator may save.
-pub struct Worker {
-    sender: Option<mpsc::SyncSender<(u64, Recording)>>,
-    results: Arc<Mutex<Option<(u64, LookupOutcome)>>>,
-    epoch: Arc<AtomicU64>,
+type Results = Arc<Mutex<Option<(u64, LookupOutcome)>>>;
+struct Job {
+    id: u64,
+    recording: Recording,
+    token: Cancellation,
+    results: Results,
+}
+struct Owner {
+    sender: Option<mpsc::SyncSender<Job>>,
     thread: Option<JoinHandle<()>>,
+}
+impl Drop for Owner {
+    fn drop(&mut self) {
+        self.sender.take();
+        if let Some(thread) = self.thread.take() {
+            let _ = thread.join();
+        }
+    }
+}
+/// Independent cancellation contexts share one bounded queue, HTTP client and cooldowns.
+pub struct Worker {
+    owner: Arc<Owner>,
+    results: Results,
+    epoch: Arc<AtomicU64>,
 }
 impl Worker {
     pub fn new() -> Result<Self, String> {
@@ -26,45 +43,55 @@ impl Worker {
             .enable_all()
             .build()
             .map_err(|_| "Could not initialize lyrics worker.")?;
-        let (sender, jobs) = mpsc::sync_channel::<(u64, Recording)>(1);
-        let results = Arc::new(Mutex::new(None));
-        let completed = results.clone();
-        let epoch = Arc::new(AtomicU64::new(0));
-        let shared = epoch.clone();
+        let (sender, jobs) = mpsc::sync_channel::<Job>(4);
         let thread = thread::Builder::new()
             .name("singalong-lyrics".into())
             .spawn(move || {
-                while let Ok((id, recording)) = jobs.recv() {
-                    let token = Cancellation {
-                        epoch: shared.clone(),
-                        expected: id,
-                    };
-                    if token.cancelled() {
+                while let Ok(job) = jobs.recv() {
+                    if job.token.cancelled() {
                         continue;
                     }
-                    let result = runtime.block_on(client.lookup(&recording, &token));
-                    if !token.cancelled() {
-                        *completed.lock().unwrap() = Some((id, result));
+                    let result = runtime.block_on(client.lookup(&job.recording, &job.token));
+                    if !job.token.cancelled() {
+                        *job.results.lock().unwrap() = Some((job.id, result));
                     }
                 }
             })
             .map_err(|_| "Could not start lyrics worker.")?;
         Ok(Self {
-            sender: Some(sender),
-            results,
-            epoch,
-            thread: Some(thread),
+            owner: Arc::new(Owner {
+                sender: Some(sender),
+                thread: Some(thread),
+            }),
+            results: Arc::new(Mutex::new(None)),
+            epoch: Arc::new(AtomicU64::new(0)),
         })
+    }
+    pub fn fork(&self) -> Self {
+        Self {
+            owner: self.owner.clone(),
+            results: Arc::new(Mutex::new(None)),
+            epoch: Arc::new(AtomicU64::new(0)),
+        }
     }
     pub fn cancel(&self) {
         self.epoch.fetch_add(1, Ordering::SeqCst);
+        self.results.lock().unwrap().take();
     }
-    /// A full queue is retried by the coordinator; no unbounded stale jobs.
     pub fn start(&self, recording: Recording) -> Option<u64> {
         let id = self.epoch.fetch_add(1, Ordering::SeqCst) + 1;
-        self.sender
+        self.owner
+            .sender
             .as_ref()?
-            .try_send((id, recording))
+            .try_send(Job {
+                id,
+                recording,
+                token: Cancellation {
+                    epoch: self.epoch.clone(),
+                    expected: id,
+                },
+                results: self.results.clone(),
+            })
             .ok()
             .map(|_| id)
     }
@@ -80,9 +107,5 @@ impl Worker {
 impl Drop for Worker {
     fn drop(&mut self) {
         self.cancel();
-        self.sender.take();
-        if let Some(thread) = self.thread.take() {
-            let _ = thread.join();
-        }
     }
 }

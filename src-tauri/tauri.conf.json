@@ -3,13 +3,48 @@
   "productName": "Singalong",
   "version": "0.0.0",
   "identifier": "io.github.kmab5.singalong",
-  "build": { "frontendDist": "../dist" },
+  "build": {
+    "frontendDist": "../dist",
+    "beforeBuildCommand": "npm run build"
+  },
   "app": {
     "windows": [],
     "security": {
       "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-src 'none'",
-      "capabilities": ["main", "overlay"]
+      "capabilities": [
+        "main",
+        "overlay"
+      ]
     }
   },
-  "bundle": { "active": false }
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/icon.ico"
+    ],
+    "publisher": "Singalong contributors",
+    "shortDescription": "A local lyrics companion for Windows media sessions",
+    "category": "Music",
+    "license": "GPL-3.0-only",
+    "licenseFile": "../LICENSE",
+    "resources": {
+      "../LICENSE": "LICENSE",
+      "../NOTICE.md": "NOTICE.md",
+      "../SOURCE-NOTICES.md": "SOURCE-NOTICES.md",
+      "../PRIVACY.md": "PRIVACY.md",
+      "../release-notes/": "release-notes/"
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  }
 }

@@ -3,7 +3,10 @@ use crate::{
     providers::{LookupOutcome, Worker},
     storage::Storage,
 };
-use singalong_core::{lyrics::timeline, model::*};
+use singalong_core::{
+    lyrics::{estimated, timeline, word_sync},
+    model::*,
+};
 
 pub trait Jobs: Send {
     fn start(&mut self, recording: Recording) -> Option<u64>;
@@ -40,6 +43,9 @@ pub struct Coordinator {
     retry_at: u64,
     recent: std::collections::VecDeque<CachedOutcome>,
     cache_key: String,
+    suppressed_key: Option<String>,
+    current_recording_id: String,
+    dirty: bool,
 }
 impl Coordinator {
     pub fn new(db: Storage, jobs: Box<dyn Jobs>) -> Self {
@@ -55,9 +61,146 @@ impl Coordinator {
             retry_at: 0,
             recent: std::collections::VecDeque::new(),
             cache_key: String::new(),
+            suppressed_key: None,
+            current_recording_id: String::new(),
+            dirty: false,
         }
     }
+    /// Prevent deletion from triggering immediate automatic re-download of the same song.
+    pub fn take_dirty(&mut self) -> bool {
+        std::mem::take(&mut self.dirty)
+    }
+    pub fn downloads_cleared(&mut self) {
+        self.dirty = true;
+        self.suppressed_key = Some(self.current_recording_id.clone());
+        self.jobs.cancel();
+        self.job = None;
+        self.versions.clear();
+        self.persisted = false;
+        self.state = ReaderState::default();
+        self.state.status = LookupStatus::NotFound;
+        self.state.message = "Downloaded lyrics cleared. Retry to fetch this song again.".into();
+        self.retry_at = u64::MAX;
+    }
+    pub fn reload_saved_after_clear(&mut self) {
+        if let Ok(recording) = serde_json::from_str::<Recording>(&self.target) {
+            let _ = self.saved(&recording, None);
+        }
+    }
+    pub fn refresh_saved(&mut self) {
+        self.dirty = true;
+        self.target.clear();
+    }
+    pub fn reader_action(
+        &mut self,
+        action: ReaderAction,
+        session: Option<&PlaybackSnapshot>,
+        now: u64,
+    ) -> Result<(), String> {
+        let original_id = match &action {
+            ReaderAction::Select { version_id }
+            | ReaderAction::Adjust { version_id, .. }
+            | ReaderAction::Align { version_id, .. } => version_id,
+        };
+        let mut version = self
+            .versions
+            .iter()
+            .find(|v| &v.id == original_id)
+            .cloned()
+            .or_else(|| self.db.version(original_id.clone()).ok())
+            .ok_or("Lyrics are no longer available.")?;
+        let is_live = self.versions.iter().any(|v| v.id == version.id);
+        let aligned = if let ReaderAction::Align { line, .. } = &action {
+            if !is_live {
+                return Err("Alignment requires the currently playing recording.".into());
+            }
+            let session = session.ok_or("Playback position is unavailable.")?;
+            if now.saturating_sub(session.observed_at_ms.value()) > 3000 {
+                return Err("Playback position is unavailable.".into());
+            }
+            let position = session
+                .position_ms
+                .as_ref()
+                .ok_or("Playback position is unavailable.")?
+                .value();
+            let extra = if session.status == PlaybackStatus::Playing {
+                session
+                    .rate
+                    .filter(|r| r.is_finite() && *r > 0.0)
+                    .map_or(0, |r| {
+                        (now.saturating_sub(session.observed_at_ms.value()) as f64 * r) as u64
+                    })
+            } else {
+                0
+            };
+            let start = version
+                .lines
+                .get(*line as usize)
+                .and_then(|l| l.start_ms.as_ref().map(Counter::value))
+                .or_else(|| {
+                    if !self.state.estimated {
+                        return None;
+                    }
+                    let duration = session.recording.as_ref()?.duration_ms.as_ref()?.value();
+                    estimated::starts(&version.lines, duration)
+                        .get(*line as usize)
+                        .copied()
+                        .flatten()
+                })
+                .ok_or("This line has no usable timing.")?;
+            Some(
+                (i128::from(position.saturating_add(extra)) - i128::from(start))
+                    .clamp(-600000, 600000) as i64,
+            )
+        } else {
+            None
+        };
+        if is_live && !self.persisted {
+            let recording = session
+                .and_then(|s| s.recording.clone())
+                .ok_or("The playing recording changed.")?;
+            let saved = self
+                .db
+                .resolve(recording, None)
+                .map_err(|e| e.to_string())?;
+            let versions = self
+                .versions
+                .iter()
+                .cloned()
+                .map(|mut v| {
+                    v.recording_id = saved.id.clone();
+                    v.id = saved_version_id(&saved.id, &v);
+                    v
+                })
+                .collect();
+            self.db
+                .save_versions(saved.id.clone(), versions)
+                .map_err(|e| e.to_string())?;
+            version.recording_id = saved.id;
+            version.id = saved_version_id(&version.recording_id, &version);
+        }
+        match action {
+            ReaderAction::Select { .. } => self.db.select(version.recording_id, version.id),
+            ReaderAction::Adjust {
+                delay_ms,
+                estimated,
+                ..
+            } => self.db.adjust(version.id, i64::from(delay_ms), estimated),
+            ReaderAction::Align { .. } => {
+                let (_, estimated) = self
+                    .db
+                    .adjustment(version.id.clone())
+                    .map_err(|e| e.to_string())?;
+                self.db.adjust(version.id, aligned.unwrap(), estimated)
+            }
+        }
+        .map_err(|e| e.to_string())?;
+        self.refresh_saved();
+        Ok(())
+    }
     pub fn retry(&mut self) {
+        self.dirty = true;
+        self.suppressed_key = None;
         if self.state.version.is_none() {
             self.recent.retain(|entry| entry.key != self.cache_key);
             self.jobs.cancel();
@@ -83,11 +226,18 @@ impl Coordinator {
             .map_err(|e| e.to_string())?
             && let Some(version) = self.db.selected(saved.id).map_err(|e| e.to_string())?
         {
-            self.delay = self
+            let adjustment = self
                 .db
                 .adjustment(version.id.clone())
-                .map_err(|e| e.to_string())?
-                .0;
+                .map_err(|e| e.to_string())?;
+            self.delay = adjustment.0;
+            self.state.delay_ms = adjustment.0 as i32;
+            self.state.estimated = adjustment.1;
+            self.versions = self
+                .db
+                .versions(version.recording_id.clone())
+                .map_err(|e| e.to_string())?;
+            self.state.versions = self.versions.iter().map(VersionSummary::from).collect();
             self.state.version = Some(version);
             self.state.status = LookupStatus::Ready;
             self.state.cached = true;
@@ -129,6 +279,14 @@ impl Coordinator {
             let mut identity = recording.clone();
             identity.id.clear();
             self.cache_key = serde_json::to_string(&identity).expect("serializable recording");
+            self.current_recording_id = recording.id.clone();
+            if self
+                .suppressed_key
+                .as_ref()
+                .is_some_and(|key| key != &self.current_recording_id)
+            {
+                self.suppressed_key = None;
+            }
             self.recent.retain(|entry| entry.until > now);
             self.state.status = LookupStatus::Waiting;
             if let Err(error) = self.saved(recording, qualified) {
@@ -167,6 +325,7 @@ impl Coordinator {
                 LookupOutcome::Found(versions) => {
                     self.state.version = versions.first().cloned();
                     self.versions = versions;
+                    self.state.versions = self.versions.iter().map(VersionSummary::from).collect();
                     self.state.status = LookupStatus::Ready;
                     if let Err(error) = self.saved(recording, qualified) {
                         self.state.message = error;
@@ -256,6 +415,7 @@ impl Coordinator {
             }
         }
         if !offline
+            && self.suppressed_key.as_ref() != Some(&self.current_recording_id)
             && !token.cancelled()
             && self.state.version.is_none()
             && self.job.is_none()
@@ -267,7 +427,16 @@ impl Coordinator {
             self.state.status = LookupStatus::Loading;
             self.state.message = "Finding lyrics…".into();
         }
+        if self.suppressed_key.as_ref() == Some(&self.current_recording_id)
+            && self.state.version.is_none()
+        {
+            self.state.status = LookupStatus::NotFound;
+            self.state.message =
+                "Downloaded lyrics cleared. Retry to fetch this song again.".into();
+        }
         self.state.position_available = false;
+        self.state.estimated_available = false;
+        self.state.word_emphasis.clear();
         self.state.active_line = None;
         self.state.countdown_seconds = None;
         if let (Some(version), Some(session)) = (&self.state.version, session) {
@@ -292,15 +461,33 @@ impl Coordinator {
                         .map_or(position, |d| position.min(d.value()))
                 });
             self.state.position_available = position.is_some();
-            let moment = timeline::at(&version.lines, position, self.delay);
-            self.state.active_line = moment.index.map(|i| i as u32);
-            self.state.countdown_seconds = moment.countdown_seconds.map(Counter::new);
+            let duration = recording
+                .duration_ms
+                .as_ref()
+                .map(Counter::value)
+                .filter(|d| *d > 0);
+            self.state.estimated_available = position.is_some()
+                && duration.is_some()
+                && matches!(version.timing, TimingKind::Unsynced);
+            if self.state.estimated && self.state.estimated_available {
+                self.state.active_line =
+                    estimated::index(&version.lines, position, duration.unwrap(), self.delay)
+                        .map(|i| i as u32);
+            } else {
+                let moment = timeline::at(&version.lines, position, self.delay);
+                self.state.active_line = moment.index.map(|i| i as u32);
+                self.state.countdown_seconds = moment.countdown_seconds.map(Counter::new);
+                if let Some(index) = moment.index {
+                    self.state.word_emphasis =
+                        word_sync::emphasis(&version.lines, index, position, duration, self.delay);
+                }
+            }
         }
         before != self.display_key()
     }
     fn display_key(&self) -> String {
         format!(
-            "{:?}:{:?}:{:?}:{:?}:{}:{}:{}:{:?}",
+            "{:?}:{:?}:{:?}:{:?}:{}:{}:{}:{:?}:{}:{}:{:?}:{}",
             self.state.status,
             self.state.version.as_ref().map(|v| &v.id),
             self.state.active_line,
@@ -308,7 +495,25 @@ impl Coordinator {
             self.state.position_available,
             self.state.cached,
             self.state.message,
-            self.state.retry_after_ms
+            self.state.retry_after_ms,
+            self.state.delay_ms,
+            self.state.estimated,
+            self.state.word_emphasis,
+            self.state.estimated_available
         )
     }
+}
+
+pub(super) fn saved_version_id(recording: &str, version: &LyricVersion) -> String {
+    format!(
+        "{}:{}:{}:{}",
+        recording,
+        version
+            .source_name
+            .as_deref()
+            .unwrap_or("provider")
+            .to_lowercase(),
+        version.provider_id.as_deref().unwrap_or("0"),
+        version.content_hash
+    )
 }

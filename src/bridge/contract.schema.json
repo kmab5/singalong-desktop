@@ -7,6 +7,8 @@
     "action",
     "failure",
     "lyric_version",
+    "product_command",
+    "product_reply",
     "snapshot"
   ],
   "properties": {
@@ -19,11 +21,108 @@
     "lyric_version": {
       "$ref": "#/definitions/LyricVersion"
     },
+    "product_command": {
+      "$ref": "#/definitions/ProductCommand"
+    },
+    "product_reply": {
+      "$ref": "#/definitions/ProductReply"
+    },
     "snapshot": {
       "$ref": "#/definitions/RuntimeSnapshot"
     }
   },
   "definitions": {
+    "Appearance": {
+      "type": "object",
+      "required": [
+        "floating",
+        "main",
+        "opacity",
+        "reducedMotion"
+      ],
+      "properties": {
+        "floating": {
+          "$ref": "#/definitions/ReaderAppearance"
+        },
+        "main": {
+          "$ref": "#/definitions/ReaderAppearance"
+        },
+        "opacity": {
+          "type": "number",
+          "format": "double"
+        },
+        "reducedMotion": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BackupLimits": {
+      "type": "object",
+      "required": [
+        "maxNodes",
+        "maxStringBytes"
+      ],
+      "properties": {
+        "maxBytes": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maxNodes": {
+          "$ref": "#/definitions/Counter"
+        },
+        "maxStringBytes": {
+          "$ref": "#/definitions/Counter"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BackupProgress": {
+      "type": "object",
+      "required": [
+        "message",
+        "stage",
+        "summary"
+      ],
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/definitions/BackupStage"
+        },
+        "summary": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "token": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BackupStage": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "busy",
+        "preview",
+        "done",
+        "failed",
+        "cancelling"
+      ]
+    },
     "Capabilities": {
       "type": "object",
       "required": [
@@ -93,6 +192,113 @@
         "rate_limited",
         "storage_unavailable",
         "cancelled"
+      ]
+    },
+    "LibraryDetail": {
+      "type": "object",
+      "required": [
+        "adjustments",
+        "item",
+        "versions"
+      ],
+      "properties": {
+        "adjustments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VersionAdjustment"
+          }
+        },
+        "item": {
+          "$ref": "#/definitions/LibraryItem"
+        },
+        "selected": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LyricVersion"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "LibraryItem": {
+      "type": "object",
+      "required": [
+        "favorite",
+        "hasLyrics",
+        "playCount",
+        "recording"
+      ],
+      "properties": {
+        "favorite": {
+          "type": "boolean"
+        },
+        "hasLyrics": {
+          "type": "boolean"
+        },
+        "lastPlayedMs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "playCount": {
+          "$ref": "#/definitions/Counter"
+        },
+        "recording": {
+          "$ref": "#/definitions/Recording"
+        }
+      },
+      "additionalProperties": false
+    },
+    "LibraryQuery": {
+      "type": "object",
+      "required": [
+        "favoritesOnly",
+        "limit",
+        "offset",
+        "sort",
+        "text"
+      ],
+      "properties": {
+        "favoritesOnly": {
+          "type": "boolean"
+        },
+        "limit": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "offset": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "sort": {
+          "$ref": "#/definitions/LibrarySort"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "LibrarySort": {
+      "type": "string",
+      "enum": [
+        "title",
+        "artist",
+        "recent",
+        "most_played"
       ]
     },
     "LookupStatus": {
@@ -270,6 +476,14 @@
         "uncertain"
       ]
     },
+    "OverlayMode": {
+      "type": "string",
+      "enum": [
+        "compact",
+        "expanded",
+        "minimal"
+      ]
+    },
     "Platform": {
       "type": "string",
       "enum": [
@@ -387,13 +601,718 @@
       },
       "additionalProperties": false
     },
+    "ProductCommand": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "limits"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "backup_preview"
+              ]
+            },
+            "limits": {
+              "$ref": "#/definitions/BackupLimits"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "settings",
+            "token"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "backup_apply"
+              ]
+            },
+            "settings": {
+              "type": "boolean"
+            },
+            "token": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "limits"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "backup_export"
+              ]
+            },
+            "limits": {
+              "$ref": "#/definitions/BackupLimits"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "backup_poll"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "backup_cancel"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "diagnostics_preview"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "diagnostics_export"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "current_detail"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "hide_overlay"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "query"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "library"
+              ]
+            },
+            "query": {
+              "$ref": "#/definitions/LibraryQuery"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "kind"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "detail"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "favorite"
+              ]
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "action",
+            "kind"
+          ],
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/ReaderAction"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "reader"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "appearance"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/Appearance"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "reset_appearance"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "query"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "search"
+              ]
+            },
+            "query": {
+              "$ref": "#/definitions/SearchQuery"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "token"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "search_poll"
+              ]
+            },
+            "token": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "context",
+            "kind"
+          ],
+          "properties": {
+            "context": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "search_cancel"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "token",
+            "versionId"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "save_search"
+              ]
+            },
+            "token": {
+              "type": "string"
+            },
+            "versionId": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "clear_downloads"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "clear_history"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "mode"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "overlay"
+              ]
+            },
+            "mode": {
+              "$ref": "#/definitions/OverlayMode"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "enabled",
+            "kind"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "click_through"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "side"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "dock"
+              ]
+            },
+            "side": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "reset_overlay"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "open_releases"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ProductReply": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "state"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "backup"
+              ]
+            },
+            "state": {
+              "$ref": "#/definitions/BackupProgress"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "report"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "diagnostics"
+              ]
+            },
+            "report": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "done"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "items",
+            "kind",
+            "more"
+          ],
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LibraryItem"
+              }
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "library"
+              ]
+            },
+            "more": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "detail",
+            "kind"
+          ],
+          "properties": {
+            "detail": {
+              "$ref": "#/definitions/LibraryDetail"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "detail"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "message",
+            "status",
+            "token",
+            "versions"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "search"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "status": {
+              "$ref": "#/definitions/LookupStatus"
+            },
+            "token": {
+              "type": "string"
+            },
+            "versions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LyricVersion"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ReaderAction": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "versionId"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "select"
+              ]
+            },
+            "versionId": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "delayMs",
+            "estimated",
+            "kind",
+            "versionId"
+          ],
+          "properties": {
+            "delayMs": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "estimated": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "adjust"
+              ]
+            },
+            "versionId": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "line",
+            "versionId"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "align"
+              ]
+            },
+            "line": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            },
+            "versionId": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ReaderAppearance": {
+      "type": "object",
+      "required": [
+        "alignment",
+        "textSize",
+        "words"
+      ],
+      "properties": {
+        "alignment": {
+          "$ref": "#/definitions/TextAlignment"
+        },
+        "textSize": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "words": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
     "ReaderState": {
       "type": "object",
       "required": [
         "cached",
+        "delayMs",
+        "estimated",
+        "estimatedAvailable",
         "message",
         "positionAvailable",
-        "status"
+        "status",
+        "versions",
+        "wordEmphasis"
       ],
       "properties": {
         "activeLine": {
@@ -417,6 +1336,16 @@
               "type": "null"
             }
           ]
+        },
+        "delayMs": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "estimated": {
+          "type": "boolean"
+        },
+        "estimatedAvailable": {
+          "type": "boolean"
         },
         "message": {
           "type": "string"
@@ -446,6 +1375,19 @@
               "type": "null"
             }
           ]
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VersionSummary"
+          }
+        },
+        "wordEmphasis": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "float"
+          }
         }
       },
       "additionalProperties": false
@@ -731,11 +1673,16 @@
     "RuntimeSnapshot": {
       "type": "object",
       "required": [
+        "appearance",
         "autoOverlay",
         "capabilities",
+        "clickThrough",
         "closeNotice",
         "generation",
         "offline",
+        "overlayCollapsed",
+        "overlayDocked",
+        "overlayMode",
         "overlayVisible",
         "players",
         "reader",
@@ -748,11 +1695,17 @@
         "trackingEnabled"
       ],
       "properties": {
+        "appearance": {
+          "$ref": "#/definitions/Appearance"
+        },
         "autoOverlay": {
           "type": "boolean"
         },
         "capabilities": {
           "$ref": "#/definitions/Capabilities"
+        },
+        "clickThrough": {
+          "type": "boolean"
         },
         "closeNotice": {
           "type": "boolean"
@@ -762,6 +1715,15 @@
         },
         "offline": {
           "type": "boolean"
+        },
+        "overlayCollapsed": {
+          "type": "boolean"
+        },
+        "overlayDocked": {
+          "type": "boolean"
+        },
+        "overlayMode": {
+          "$ref": "#/definitions/OverlayMode"
         },
         "overlayVisible": {
           "type": "boolean"
@@ -807,6 +1769,38 @@
         },
         "trackingEnabled": {
           "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SearchQuery": {
+      "type": "object",
+      "required": [
+        "artist",
+        "context",
+        "title"
+      ],
+      "properties": {
+        "album": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "artist": {
+          "type": "string"
+        },
+        "context": {
+          "type": "string"
+        },
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -872,12 +1866,69 @@
         }
       ]
     },
+    "TextAlignment": {
+      "type": "string",
+      "enum": [
+        "left",
+        "center",
+        "right"
+      ]
+    },
     "TimingKind": {
       "type": "string",
       "enum": [
         "supplied",
         "unsynced"
       ]
+    },
+    "VersionAdjustment": {
+      "type": "object",
+      "required": [
+        "delayMs",
+        "estimated",
+        "versionId"
+      ],
+      "properties": {
+        "delayMs": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "estimated": {
+          "type": "boolean"
+        },
+        "versionId": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "VersionSummary": {
+      "type": "object",
+      "required": [
+        "confidence",
+        "id",
+        "origin",
+        "source",
+        "timing"
+      ],
+      "properties": {
+        "confidence": {
+          "$ref": "#/definitions/MatchConfidence"
+        },
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "$ref": "#/definitions/LyricOrigin"
+        },
+        "source": {
+          "type": "string"
+        },
+        "timing": {
+          "$ref": "#/definitions/TimingKind"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

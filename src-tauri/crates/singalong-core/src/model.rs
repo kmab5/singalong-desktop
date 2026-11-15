@@ -1,3 +1,5 @@
+mod product;
+pub use product::*;
 use schemars::{
     JsonSchema,
     schema::{InstanceType, Schema, SchemaObject, StringValidation},
@@ -194,6 +196,11 @@ pub struct RuntimeSnapshot {
     pub close_notice: bool,
     pub offline: bool,
     pub reader: ReaderState,
+    pub appearance: Appearance,
+    pub overlay_mode: OverlayMode,
+    pub click_through: bool,
+    pub overlay_collapsed: bool,
+    pub overlay_docked: bool,
 }
 impl RuntimeSnapshot {
     pub fn foundation() -> Self {
@@ -228,6 +235,11 @@ impl RuntimeSnapshot {
             close_notice: false,
             offline: false,
             reader: ReaderState::default(),
+            appearance: Appearance::default(),
+            overlay_mode: OverlayMode::default(),
+            click_through: false,
+            overlay_collapsed: false,
+            overlay_docked: false,
         }
     }
 }
@@ -257,6 +269,8 @@ pub struct Contract {
     pub lyric_version: LyricVersion,
     pub failure: CommandFailure,
     pub action: RuntimeAction,
+    pub product_command: ProductCommand,
+    pub product_reply: ProductReply,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -352,6 +366,11 @@ pub struct ReaderState {
     pub active_line: Option<u32>,
     pub countdown_seconds: Option<Counter>,
     pub position_available: bool,
+    pub versions: Vec<VersionSummary>,
+    pub delay_ms: i32,
+    pub estimated: bool,
+    pub estimated_available: bool,
+    pub word_emphasis: Vec<f32>,
     pub cached: bool,
     pub message: String,
     pub retry_after_ms: Option<Counter>,

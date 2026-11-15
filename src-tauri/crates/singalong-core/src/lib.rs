@@ -1,5 +1,5 @@
-pub mod identity;
 pub mod backup;
+pub mod identity;
 pub mod lyrics;
 pub mod model;
 

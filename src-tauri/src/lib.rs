@@ -1,5 +1,11 @@
 //! Application construction and shared P0 probe utilities.
+#[cfg(feature = "desktop")]
+mod backup;
 pub mod commands;
+#[cfg(feature = "desktop")]
+mod diagnostics;
+#[cfg(feature = "desktop")]
+mod files;
 pub mod platform;
 pub mod providers;
 pub mod runtime;
@@ -7,6 +13,13 @@ pub mod storage;
 
 #[cfg(feature = "desktop")]
 mod windows;
+#[cfg(feature = "desktop")]
+#[derive(Default)]
+pub(crate) struct Shutdown {
+    pub started: std::sync::atomic::AtomicBool,
+    pub finished: std::sync::atomic::AtomicBool,
+    pub epoch: std::sync::Arc<std::sync::atomic::AtomicU64>,
+}
 #[cfg(feature = "desktop")]
 pub fn run() {
     use tauri::{Emitter, Manager};
@@ -21,6 +34,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::get_snapshot,
             commands::get_diagnostics,
+            commands::product_command,
             commands::runtime_action
         ])
         .setup(|app| {
@@ -31,20 +45,30 @@ pub fn run() {
             let runtime = runtime::Runtime::native(
                 db.clone(),
                 std::sync::Arc::new(move |snapshot| {
-                    for window in handle.webview_windows().values() {
-                        if window.is_visible().unwrap_or(false)
-                            && !window.is_minimized().unwrap_or(false)
-                        {
-                            let _ = window.emit("runtime-state", &snapshot);
-                        }
-                    }
                     let app = handle.clone();
-                    let _ =
-                        handle.run_on_main_thread(move || windows::overlay::sync(&app, &snapshot));
+                    let _ = handle.run_on_main_thread(move || {
+                        if app
+                            .try_state::<Shutdown>()
+                            .is_some_and(|s| s.started.load(std::sync::atomic::Ordering::SeqCst))
+                        {
+                            return;
+                        }
+                        for window in app.webview_windows().values() {
+                            if window.is_visible().unwrap_or(false)
+                                && !window.is_minimized().unwrap_or(false)
+                            {
+                                let _ = window.emit("runtime-state", &snapshot);
+                            }
+                        }
+                        windows::overlay::sync(&app, &snapshot);
+                    });
                 }),
             )
             .map_err(std::io::Error::other)?;
+            app.manage(Shutdown::default());
             app.manage(runtime.clone());
+            app.manage(diagnostics::Reports::default());
+            app.manage(backup::Manager::new(db.clone(), runtime.clone()));
             app.manage(db.clone());
             runtime.main_visible(!std::env::args().any(|arg| arg == "--tray"));
             let window = tauri::WebviewWindowBuilder::new(
@@ -95,8 +119,26 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("build Singalong")
         .run(|app, event| {
-            if matches!(event, tauri::RunEvent::ExitRequested { .. }) {
-                app.state::<runtime::Runtime>().shutdown();
+            if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                use std::sync::atomic::Ordering;
+                let shutdown = app.state::<Shutdown>();
+                if !shutdown.finished.load(Ordering::SeqCst) {
+                    api.prevent_exit();
+                    if !shutdown.started.swap(true, Ordering::SeqCst) {
+                        shutdown.epoch.fetch_add(1, Ordering::SeqCst);
+                        app.state::<backup::Manager>().begin_shutdown();
+                        app.state::<runtime::Runtime>().begin_shutdown();
+                        let app = app.clone();
+                        tauri::async_runtime::spawn_blocking(move || {
+                            app.state::<backup::Manager>().shutdown();
+                            app.state::<runtime::Runtime>().shutdown();
+                            app.state::<Shutdown>()
+                                .finished
+                                .store(true, Ordering::SeqCst);
+                            app.exit(0);
+                        });
+                    }
+                }
             }
         });
 }
