@@ -131,8 +131,8 @@ Evidence: [P2 tracking and lifecycle](evidence/tracking.md). Native integration 
 **Consumes:** Recording repository, cancellation and network policy.
 **Produces:** Local-first LookupResult with attribution, candidates and retry state.
 
-- [ ] Translate Android parser/matcher/query/preference fixtures before implementing equivalent rules.
-- [ ] Test offsets, repeated LRC tags, malformed words, blank-only responses, qualifiers and inferred filename hints.
+- [x] Translate Android parser/matcher/query/preference fixtures before implementing equivalent rules.
+- [x] Test offsets, repeated LRC tags, malformed words, blank-only responses, qualifiers and inferred filename hints. See [Preview A evidence](evidence/preview-a.md).
 - [ ] Add bounded HTTP and shared pacing/cooldown ownership; use a local mock server for 404, 429, 503, malformed/oversized responses and cancellation.
 - [ ] Implement fallback without turning a source failure into a definitive miss; show Possible match for uncertain/inferred lyrics.
 - [ ] Fetch immediately for opened readers; save after ten seconds of actual playback in the background, including hidden windows. Add any-connection default and Offline mode cancelling provider work.
