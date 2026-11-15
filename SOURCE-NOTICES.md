@@ -14,3 +14,14 @@ bounded parsing, strict event-based YAML validation, overflow-safe arithmetic,
 and protection against filename hints removing tagged edition qualifiers.
 
 Test lyric text is synthetic. Provider responses are not bundled source assets.
+
+The pure backup codecs in `src-tauri/crates/singalong-core/src/backup/` adapt
+Android 1.3.0 `backup/BackupDocument.kt`, `backup/BackupArchive.kt`,
+`backup/BackupOptions.kt`, `backup/BackupLimits.kt`, `model/Models.kt`,
+`settings/PreferenceBackup.kt`, `settings/SettingsBackup.kt`,
+`translation/TranslationRepository.kt`, and `lyrics/WordSync.kt` from the same
+pinned commit and GPL-3.0 source above. Compatibility rules were also informed by
+`BackupCodecTest.kt`, `BackupArchiveTest.kt`, `BackupVersionScopeTest.kt`, and
+`PreferenceBackupTest.kt`. Desktop additions include an independent versioned
+full-backup envelope, inert preference retention, duplicate JSON-key rejection,
+and strict single-disk ZIP/ZIP64 header validation without extraction.
