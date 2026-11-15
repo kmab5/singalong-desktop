@@ -9,6 +9,7 @@ members = ["crates/singalong-core"]
 resolver = "3"
 
 [features]
+custom-protocol = ["tauri/custom-protocol"]
 desktop = ["dep:tauri", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-autostart", "windows/Win32_System_RemoteDesktop", "windows/Win32_UI_Shell", "windows/Win32_UI_WindowsAndMessaging", "windows/Win32_System_Com", "windows/Win32_UI_Shell_Common", "windows/Win32_Storage_FileSystem"]
 window-probe = ["dep:tauri", "windows/Win32_System_RemoteDesktop", "windows/Win32_UI_Shell", "windows/Win32_UI_WindowsAndMessaging"]
 
