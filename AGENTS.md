@@ -2,7 +2,7 @@
 
 ## Current scope
 
-This repository is in planning. The product scope was confirmed after grilling on 2026-11-13. Current work is documentation, not an implemented app. Start with [plan/README.md](plan/README.md) and the authoritative [confirmed release scope](plan/09-confirmed-release-scope.md). Do not describe planned features as shipped.
+This repository has P0 feasibility probes and verified P1.1 application foundation and P1.2 storage; P2 tracking is next. The product scope was confirmed after grilling on 2026-11-13. The native shell runs, but playback tracking, lookup and a usable Preview A are not implemented. Start with [plan/README.md](plan/README.md), the authoritative [confirmed release scope](plan/09-confirmed-release-scope.md), and [foundation evidence](plan/evidence/foundation.md). Do not describe planned features as shipped.
 
 The Android reference is the sibling repository `../singalong`, audited at commit `453068332bb58e3d642d294ef861ba6ccd337952` (1.3.0). See the source map and pinned links in the audit. Treat it as read-only unless work there is explicitly requested. Its historical release authorizations do not authorize desktop publication.
 
@@ -51,8 +51,10 @@ Follow [TAGGING.md](TAGGING.md). Tag meaningful verified checkpoints liberally u
 
 A request to commit/tag/push authorizes those Git operations for the requested milestone; it does not authorize installer releases or Pages deployment. Push only the intended branch and explicit tag, without force.
 
+The user requested regular commits at meaningful development junctions. Commit verified milestones and keep task evidence current; do not accumulate an entire phase's unrelated changes before committing. This standing instruction authorizes local checkpoint commits and the tagging policy above, not remote pushes or publication.
+
 ## Verification and handoff
 
-Run relevant behavior tests and checks once they exist; the proposed commands in the plans are not runnable today. Browser preview tests do not establish native window or media-session compatibility. Record OS/player/build versions and observed results for native checks.
+Run the Cargo probes in [the probe runbook](src-tauri/README.md) and the foundation checks in [foundation evidence](plan/evidence/foundation.md). Run `npm run build` before compiling the desktop feature, since its bundled assets come from `dist/`. `npm run dev:fixture` is an explicit local test runtime; `npm run desktop` starts the native app. Browser tests do not establish native window or media-session compatibility. Record OS/player/build versions and observed results for native checks.
 
 For every handoff state: files changed, completed task IDs, commands/results, unverified behavior and next dependency. Keep source implemented, build passed, tests passed and manually verified as separate claims. Do not commit, tag, push or publish as an incidental part of a documentation task.

@@ -1,0 +1,38 @@
+{
+  "name": "singalong-desktop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.22.1 <25" },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "dev:fixture": "vite --host 127.0.0.1 --mode fixture",
+    "contract:generate": "node scripts/contracts.mjs",
+    "contract:check": "node scripts/contracts.mjs --check",
+    "check:native-manifest": "powershell.exe -NoProfile -File scripts/check-native-manifest.ps1",
+    "probe:browser": "node scripts/probe-browser.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "build": "npm run typecheck && vite build",
+    "build:fixture": "vite build --mode fixture --outDir artifacts/fixture",
+    "desktop": "npm run build && cargo run --manifest-path src-tauri/Cargo.toml --features desktop --bin singalong-desktop"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.11.1",
+    "ajv": "8.20.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.13.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.0.5",
+    "json-schema-to-typescript": "15.0.4",
+    "typescript": "6.0.3",
+    "vite": "8.3.5",
+    "vitest": "4.1.10"
+  }
+}

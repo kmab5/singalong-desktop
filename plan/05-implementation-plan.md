@@ -17,11 +17,11 @@ Authoritative product requirements: [confirmed release scope](09-confirmed-relea
 - Never replace original metadata, provider lyrics, user selections or personal edits silently.
 - Supplied and estimated timing remain distinguishable.
 - No platform is marked supported solely because it compiles.
-- No app implementation, deployment, commit or publication has been performed by this planning task.
+- The original planning checkpoint contains no app implementation. P0 implementation began on 2026-11-15; see linked evidence for actual verification. No deployment or publication is implied.
 - File paths below are proposed create/modify targets. Establish their exact interfaces within the task before downstream work.
 - Use synthetic fixtures; regression requirements are detailed in [verification](06-verification-release.md).
 - Complete a task's focused verification before updating its checkbox. Record blocked native checks separately.
-- After foundation exists, use `npm ci`, `npm run typecheck`, `npm run test -- --run`, `npm run build`, `cargo test --manifest-path src-tauri/Cargo.toml --workspace` and `cargo clippy --manifest-path src-tauri/Cargo.toml --workspace --all-targets -- -D warnings` as appropriate. These are future commands, not available scripts today.
+- After foundation exists, use `npm ci`, `npm run typecheck`, `npm run test -- --run`, `npm run build`, `cargo test --manifest-path src-tauri/Cargo.toml --workspace` and `cargo clippy --manifest-path src-tauri/Cargo.toml --workspace --all-targets -- -D warnings` as appropriate. These scripts now exist; native checks use the desktop/window-probe features.
 
 ## Dependencies and release slices
 
@@ -42,12 +42,14 @@ P5.1 depends on P1/P3, P6 on P5.1; deferred P7/P8 use the same data model. P9 nu
 **Consumes:** Platform APIs and the Android PlaybackSnapshot fields.
 **Produces:** Redacted observations and a documented adapter mapping; no public support claim.
 
-- [ ] Define the probe output: ephemeral session ID, persistent player ID, metadata presence, status, position/rate availability and event times.
-- [ ] Implement a minimal Windows probe using session-manager callbacks and explicit token cleanup; run as the intended ordinary user process.
+- [x] Define the probe output: ephemeral session ID, persistent player ID, metadata presence, status, position/rate availability and event times.
+- [x] Implement a minimal Windows probe using session-manager callbacks and explicit token cleanup; run as the intended ordinary user process.
 - [ ] Exercise two players, paused seeks, missing fields, player exit and repeated start/stop.
 - [ ] Record Windows 11 native Media Player and Spotify desktop results and YouTube in Chrome/Edge/Firefox separately; later platform probes are not a Windows release dependency.
-- [ ] Record actual access/entitlement needs and timestamp conversions; choose a fallback for absent position.
-- [ ] Gate: a native session produces valid snapshots and shuts down cleanly. A mock is not evidence for this gate.
+- [x] Record actual access/entitlement needs and timestamp conversions; choose a fallback for absent position.
+- [x] Gate: a native session produces valid snapshots and shuts down cleanly. A mock is not evidence for this gate.
+
+Evidence: [2026-11-15 native Media Player probe](evidence/platform-probes.md). P0.1 remains partial: two concurrent players and paused seeks were observed; access-loss, rapid in-process restart and the remaining player matrix are unverified.
 
 ### P0.2 — Prove window lifecycle
 
@@ -55,11 +57,13 @@ P5.1 depends on P1/P3, P6 on P5.1; deferred P7/P8 use the same data model. P9 nu
 **Consumes:** Tauri native windows, tray and platform lock/suspend hooks.
 **Produces:** Supported window operations per OS/compositor.
 
-- [ ] Make a local-content floating window with drag, resize, always-on-top and tray recovery.
+- [x] Make a local-content floating window with drag, resize, always-on-top and tray recovery.
 - [ ] Test focus, lock/unlock, fullscreen apps, scaling and monitor removal.
-- [ ] Verify a solid-background fallback and reset-position action.
+- [x] Verify a solid-background fallback and reset-position action.
 - [ ] Decide which properties are reliable enough to expose; record unsupported behavior explicitly.
 - [ ] Gate: no stranded offscreen window, no lock-screen lyrics, and a working way to stop/quit.
+
+Evidence: [window probe and native smoke results](evidence/window-probes.md). The smoke run is not a substitute for actual tray interaction, lock/suspend or monitor checks. P0.2 remains partial; P1 continued with the remaining native cases retained as release gates.
 
 ### P1.1 — Establish the application and portable contracts
 
@@ -67,12 +71,14 @@ P5.1 depends on P1/P3, P6 on P5.1; deferred P7/P8 use the same data model. P9 nu
 **Consumes:** P0 evidence and architecture.
 **Produces:** Main window, explicit runtime capability DTO, generated/checked IPC types and synthetic preview.
 
-- [ ] Pin toolchains/dependencies, configure `dist/` output, ignore build artifacts and add the planned check scripts.
-- [ ] Define Recording, PlayerId, SessionId, PlaybackSnapshot, LyricVersion and error/event DTOs with units/nullability.
-- [ ] Add bridge tests for null timing, Unicode, large integer encoding, stale revision rejection and initial snapshot/event ordering.
-- [ ] Implement local main-window bootstrap and an explicitly labelled fixture runtime for browser tests.
-- [ ] Scope native/custom commands by caller and test that overlay cannot invoke privileged main-only operations.
-- [ ] Gate: native window and browser fixture preview load independently; production assets contain no remote privileged frontend.
+- [x] Pin toolchains/dependencies, configure `dist/` output, ignore build artifacts and add the planned check scripts.
+- [x] Define Recording, PlayerId, SessionId, PlaybackSnapshot, LyricVersion and error/event DTOs with units/nullability.
+- [x] Add bridge tests for null timing, Unicode, large integer encoding, stale revision rejection and initial snapshot/event ordering.
+- [x] Implement local main-window bootstrap and an explicitly labelled fixture runtime for browser tests.
+- [x] Scope native/custom commands by caller and test that overlay cannot invoke privileged main-only operations.
+- [x] Gate: native window and browser fixture preview load independently; production assets contain no remote privileged frontend.
+
+Evidence: [P1.1 foundation](evidence/foundation.md). P0 hardware/account checks remain release gates under the user's direction to continue development autonomously.
 
 ### P1.2 — Implement durable storage and settings
 
@@ -80,12 +86,14 @@ P5.1 depends on P1/P3, P6 on P5.1; deferred P7/P8 use the same data model. P9 nu
 **Consumes:** P1 DTOs.
 **Produces:** Transactional recording/version repository and typed settings snapshot.
 
-- [ ] Translate RecordingIdentity and FolderIdentity test cases, including ambiguous matches and missing-field enrichment.
-- [ ] Define tables, foreign keys, indexes and schema-version migration handling.
-- [ ] Implement identity resolution, immutable version insert/select, adjustments, favorites and paginated queries on a database worker.
-- [ ] Persist settings with sanitized ranges and explicit translation consent; default tracking off for a new install.
-- [ ] Test rollback on write failure, reopen persistence, migration failure and concurrent identity resolution.
-- [ ] Gate: no duplicate/ambiguous merging; no destructive database reset on error.
+- [x] Translate RecordingIdentity and FolderIdentity test cases, including ambiguous matches and missing-field enrichment.
+- [x] Define tables, foreign keys, indexes and schema-version migration handling.
+- [x] Implement identity resolution, immutable version insert/select, adjustments, favorites and paginated queries on a database worker.
+- [x] Persist settings with sanitized ranges and explicit translation consent; default tracking off for a new install.
+- [x] Test rollback on write failure, reopen persistence, migration failure and concurrent identity resolution.
+- [x] Gate: no duplicate/ambiguous merging; no destructive database reset on error.
+
+Evidence: [P1.2 storage and identity verification](evidence/storage.md).
 
 ### P2.1 — Implement tracked sessions and qualified history
 

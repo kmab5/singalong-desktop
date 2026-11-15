@@ -1,6 +1,8 @@
 # Singalong desktop migration plans
 
-Prepared 2026-11-13. Status: **product scope confirmed after grilling; source audit complete at subsystem level; no desktop implementation or runtime verification**.
+Prepared 2026-11-13. Updated 2026-11-15. Status: **P1 foundation and storage implemented; native media/window probes exercised; remaining player, hardware and actual lock/suspend gates stay open. P2 tracking is next. No usable application preview yet.**
+
+Current evidence: [foundation](evidence/foundation.md), [storage](evidence/storage.md), [media sessions](evidence/platform-probes.md), [window lifecycle](evidence/window-probes.md). Reproduction commands: [probe runbook](../src-tauri/README.md).
 
 Android baseline: `kmab5/singalong`, commit `453068332bb58e3d642d294ef861ba6ccd337952`, version 1.3.0. The inspected Android working tree was clean. Desktop initially contained only a README and Git metadata.
 

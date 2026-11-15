@@ -1,0 +1,45 @@
+[package]
+name = "singalong-desktop"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+members = ["crates/singalong-core"]
+resolver = "3"
+
+[features]
+desktop = ["dep:tauri"]
+window-probe = ["dep:tauri", "windows/Win32_System_RemoteDesktop", "windows/Win32_UI_Shell", "windows/Win32_UI_WindowsAndMessaging"]
+
+[dependencies]
+singalong-core = { path = "crates/singalong-core" }
+serde_json = "=1.0.151"
+serde = { version = "=1.0.229", features = ["derive"] }
+rusqlite = { version = "=0.37.0", features = ["bundled"] }
+uuid = { version = "=1.26.0", features = ["v4"] }
+tauri = { version = "=2.11.5", optional = true, features = ["tray-icon"] }
+
+[build-dependencies]
+tauri-build = "=2.6.3"
+
+[dev-dependencies]
+tempfile = "=3.27.0"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "=0.61.3", features = ["Foundation", "Media_Control", "Win32_System_WinRT"] }
+windows-future = "=0.2.1"
+
+[[example]]
+name = "media_probe"
+path = "examples/media_probe.rs"
+
+[[example]]
+name = "window_probe"
+path = "examples/window_probe.rs"
+required-features = ["window-probe"]
+
+[[bin]]
+name = "singalong-desktop"
+path = "src/main.rs"
+required-features = ["desktop"]

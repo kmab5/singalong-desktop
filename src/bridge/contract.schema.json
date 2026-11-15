@@ -1,0 +1,448 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Contract",
+  "description": "Export root keeps every boundary type reachable in a single versioned schema.",
+  "type": "object",
+  "required": [
+    "failure",
+    "lyric_version",
+    "snapshot"
+  ],
+  "properties": {
+    "failure": {
+      "$ref": "#/definitions/CommandFailure"
+    },
+    "lyric_version": {
+      "$ref": "#/definitions/LyricVersion"
+    },
+    "snapshot": {
+      "$ref": "#/definitions/RuntimeSnapshot"
+    }
+  },
+  "definitions": {
+    "Capabilities": {
+      "type": "object",
+      "required": [
+        "libraryAvailable",
+        "mode",
+        "platform",
+        "reason",
+        "trackingAvailable"
+      ],
+      "properties": {
+        "libraryAvailable": {
+          "type": "boolean"
+        },
+        "mode": {
+          "$ref": "#/definitions/RuntimeMode"
+        },
+        "platform": {
+          "$ref": "#/definitions/Platform"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "trackingAvailable": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CommandFailure": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/FailureCode"
+        },
+        "message": {
+          "type": "string"
+        },
+        "retryAfterMs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Counter": {
+      "type": "string",
+      "format": "uint64-decimal",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "FailureCode": {
+      "type": "string",
+      "enum": [
+        "invalid_input",
+        "unsupported",
+        "permission_denied",
+        "offline",
+        "rate_limited",
+        "storage_unavailable",
+        "cancelled"
+      ]
+    },
+    "LyricLine": {
+      "type": "object",
+      "required": [
+        "id",
+        "text",
+        "words"
+      ],
+      "properties": {
+        "endMs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "startMs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "words": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LyricWord"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "LyricOrigin": {
+      "type": "string",
+      "enum": [
+        "provider",
+        "import",
+        "personal"
+      ]
+    },
+    "LyricVersion": {
+      "type": "object",
+      "required": [
+        "confidence",
+        "contentHash",
+        "id",
+        "lines",
+        "origin",
+        "recordingId",
+        "retention",
+        "timing"
+      ],
+      "properties": {
+        "attribution": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/definitions/MatchConfidence"
+        },
+        "contentHash": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LyricLine"
+          }
+        },
+        "origin": {
+          "$ref": "#/definitions/LyricOrigin"
+        },
+        "providerDurationMs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "providerId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recordingId": {
+          "type": "string"
+        },
+        "retention": {
+          "type": "string"
+        },
+        "sourceName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timing": {
+          "$ref": "#/definitions/TimingKind"
+        }
+      },
+      "additionalProperties": false
+    },
+    "LyricWord": {
+      "type": "object",
+      "required": [
+        "startMs",
+        "text"
+      ],
+      "properties": {
+        "endMs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "startMs": {
+          "$ref": "#/definitions/Counter"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "MatchConfidence": {
+      "type": "string",
+      "enum": [
+        "confident",
+        "uncertain"
+      ]
+    },
+    "Platform": {
+      "type": "string",
+      "enum": [
+        "windows",
+        "linux",
+        "macos"
+      ]
+    },
+    "PlaybackSnapshot": {
+      "type": "object",
+      "required": [
+        "observedAtMs",
+        "playerId",
+        "playerName",
+        "sessionId",
+        "status"
+      ],
+      "properties": {
+        "observedAtMs": {
+          "$ref": "#/definitions/Counter"
+        },
+        "playerId": {
+          "$ref": "#/definitions/PlayerId"
+        },
+        "playerName": {
+          "type": "string"
+        },
+        "positionMs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "recording": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Recording"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/PlaybackStatus"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PlaybackStatus": {
+      "type": "string",
+      "enum": [
+        "playing",
+        "paused",
+        "buffering",
+        "stopped",
+        "unknown"
+      ]
+    },
+    "PlayerId": {
+      "type": "object",
+      "required": [
+        "nativeId",
+        "platform"
+      ],
+      "properties": {
+        "nativeId": {
+          "type": "string"
+        },
+        "platform": {
+          "$ref": "#/definitions/Platform"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Recording": {
+      "type": "object",
+      "required": [
+        "artists",
+        "id",
+        "title"
+      ],
+      "properties": {
+        "album": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "artists": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "durationMs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fileName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "versionLabel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "RuntimeMode": {
+      "type": "string",
+      "enum": [
+        "native",
+        "fixture"
+      ]
+    },
+    "RuntimeSnapshot": {
+      "type": "object",
+      "required": [
+        "capabilities",
+        "generation",
+        "revision",
+        "schema",
+        "sessions",
+        "trackingEnabled"
+      ],
+      "properties": {
+        "capabilities": {
+          "$ref": "#/definitions/Capabilities"
+        },
+        "generation": {
+          "$ref": "#/definitions/Counter"
+        },
+        "revision": {
+          "$ref": "#/definitions/Counter"
+        },
+        "schema": {
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 1,
+          "minimum": 1
+        },
+        "sessions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PlaybackSnapshot"
+          }
+        },
+        "trackingEnabled": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TimingKind": {
+      "type": "string",
+      "enum": [
+        "supplied",
+        "unsynced"
+      ]
+    }
+  }
+}
