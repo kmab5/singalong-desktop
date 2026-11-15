@@ -33,3 +33,14 @@ Final integration review fixes: reserve all incoming recording/version IDs durin
 Completed production-source task coverage: P3.2, P4, P5.1, P6 and P9.1 source/configuration, on top of prior P1/P2/P3.1/P4a. Test fixtures/regressions, desktop compilation/typecheck, native playback/window/backup checks, installer/upgrade/uninstall checks, dependency-license review, signing and distribution remain separate open gates. No executable release or Pages artifact has been built or published in this phase. Plans remain under plan/ and docs/ was not changed.
 
 Cleanup no longer backfills missing selections with MIN(id): surviving lyrics use presentation-only preference, preserving nullable imported choices across both reading and deletion. Existing reader fixture source now inherits new reader fields; it was not executed.
+
+
+## Implementation handoff
+
+Integration checkpoint: `106128d` (`feat: implement first-stable reading library and backup workflows`), following codec checkpoint `9db35f6`. Both are local commits on `feat/windows-feasibility`. No push or new tag accompanied these unverified implementation checkpoints.
+
+Changed source areas: `src/features/{now,library,settings}/`, `src/overlay/`, `src/bridge/`, `src-tauri/crates/singalong-core/src/{lyrics,model,backup}/`, `src-tauri/src/{runtime,providers,storage,windows,commands}/`, native `backup.rs`, `files.rs`, `diagnostics.rs`, application setup/capabilities, and shared styles. Supporting source includes `scripts/contracts.mjs`, `scripts/package-windows.ps1`, `.github/workflows/`, `release-notes/`, license/privacy/notices, plan checklists and durable agent guidance. The existing reader fixture was adjusted for the expanded contract without running it.
+
+Commands performed: Rust formatting and Rust-to-TypeScript IPC generation completed successfully. Source review covered codec bounds/cancellation, merge identity/retention, cleanup races, search isolation, floating-window threading/docking and backup shutdown. Tests, desktop compilation, typechecking, native/browser automation, installer production and CI workflow execution were deliberately not performed. Earlier test evidence does not verify these revisions.
+
+Next dependency, only after the user resumes testing: frontend typecheck and generated-contract drift check; Rust/frontend regression suites and synthetic backup round trips/collisions/cancellation; desktop build/manifest check; browser fixture behavior; native playback/seek/lock/tray/multi-monitor/click-through/backup checks; then installer/upgrade/uninstall, dependency-license inventory/review and signing. The exact Tauri 2 CLI version used for a candidate must be selected explicitly and recorded with that build. Keep Preview A/B/C and stable verification gates open until their corresponding evidence exists.
