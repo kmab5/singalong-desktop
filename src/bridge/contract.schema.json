@@ -4,11 +4,15 @@
   "description": "Export root keeps every boundary type reachable in a single versioned schema.",
   "type": "object",
   "required": [
+    "action",
     "failure",
     "lyric_version",
     "snapshot"
   ],
   "properties": {
+    "action": {
+      "$ref": "#/definitions/RuntimeAction"
+    },
     "failure": {
       "$ref": "#/definitions/CommandFailure"
     },
@@ -267,7 +271,8 @@
         "playerId",
         "playerName",
         "sessionId",
-        "status"
+        "status",
+        "streamPinAvailable"
       ],
       "properties": {
         "observedAtMs": {
@@ -311,6 +316,9 @@
         },
         "status": {
           "$ref": "#/definitions/PlaybackStatus"
+        },
+        "streamPinAvailable": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -337,6 +345,30 @@
         },
         "platform": {
           "$ref": "#/definitions/Platform"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PlayerInfo": {
+      "type": "object",
+      "required": [
+        "available",
+        "enabled",
+        "id",
+        "name"
+      ],
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "$ref": "#/definitions/PlayerId"
+        },
+        "name": {
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -392,6 +424,139 @@
       },
       "additionalProperties": false
     },
+    "RuntimeAction": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "enabled",
+            "kind"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "tracking"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "enabled",
+            "kind",
+            "player_id"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "enable_player"
+              ]
+            },
+            "player_id": {
+              "$ref": "#/definitions/PlayerId"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "mode"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "select"
+              ]
+            },
+            "mode": {
+              "$ref": "#/definitions/SelectionMode"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "discover"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "enabled",
+            "kind"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "startup"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "enabled",
+            "kind"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "auto_overlay"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "close_to_tray"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "RuntimeMode": {
       "type": "string",
       "enum": [
@@ -402,19 +567,37 @@
     "RuntimeSnapshot": {
       "type": "object",
       "required": [
+        "autoOverlay",
         "capabilities",
+        "closeNotice",
         "generation",
+        "players",
         "revision",
         "schema",
+        "selection",
         "sessions",
+        "startAtSignIn",
+        "statusMessage",
         "trackingEnabled"
       ],
       "properties": {
+        "autoOverlay": {
+          "type": "boolean"
+        },
         "capabilities": {
           "$ref": "#/definitions/Capabilities"
         },
+        "closeNotice": {
+          "type": "boolean"
+        },
         "generation": {
           "$ref": "#/definitions/Counter"
+        },
+        "players": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PlayerInfo"
+          }
         },
         "revision": {
           "$ref": "#/definitions/Counter"
@@ -425,17 +608,93 @@
           "maximum": 1,
           "minimum": 1
         },
+        "selectedSessionId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "selection": {
+          "$ref": "#/definitions/SelectionMode"
+        },
         "sessions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/PlaybackSnapshot"
           }
         },
+        "startAtSignIn": {
+          "type": "boolean"
+        },
+        "statusMessage": {
+          "type": "string"
+        },
         "trackingEnabled": {
           "type": "boolean"
         }
       },
       "additionalProperties": false
+    },
+    "SelectionMode": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "automatic"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "player_id"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "app_pin"
+              ]
+            },
+            "player_id": {
+              "$ref": "#/definitions/PlayerId"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "player_id",
+            "session_id"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "stream_pin"
+              ]
+            },
+            "player_id": {
+              "$ref": "#/definitions/PlayerId"
+            },
+            "session_id": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     },
     "TimingKind": {
       "type": "string",

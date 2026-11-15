@@ -1,10 +1,14 @@
 use super::{Result, StorageError};
 use serde::{Deserialize, Serialize};
+use singalong_core::model::{PlayerId, SelectionMode};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields, default)]
 pub struct Settings {
     pub tracking_enabled: bool,
+    pub enabled_players: Vec<PlayerId>,
+    pub selection: SelectionMode,
+    pub close_notice_ack: bool,
     pub start_at_sign_in: bool,
     pub auto_overlay: bool,
     pub offline: bool,
@@ -16,6 +20,9 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             tracking_enabled: false,
+            enabled_players: vec![],
+            selection: SelectionMode::Automatic,
+            close_notice_ack: false,
             start_at_sign_in: false,
             auto_overlay: false,
             offline: false,

@@ -209,3 +209,28 @@ fn unsupported_schema_and_failed_migration_never_reset_existing_data() {
         0
     );
 }
+
+#[test]
+fn occurrence_retries_are_idempotent_and_keep_history_atomic() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("history");
+    let db = Storage::open(path.clone()).unwrap();
+    let recording = db.resolve(song(), None).unwrap();
+    assert!(
+        db.record_play(recording.id.clone(), "occurrence".into(), 1000)
+            .unwrap()
+    );
+    assert!(
+        !db.record_play(recording.id.clone(), "occurrence".into(), 2000)
+            .unwrap()
+    );
+    assert!(
+        db.record_play("missing".into(), "other".into(), 3000)
+            .is_err()
+    );
+    drop(db);
+    let db = Storage::open(path).unwrap();
+    let row = db.list(0, 20).unwrap().remove(0);
+    assert_eq!(row.play_count, 1);
+    assert_eq!(row.last_played_ms, Some(1000));
+}

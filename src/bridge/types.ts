@@ -1,5 +1,47 @@
 /* Generated from Rust. Run npm run contract:generate; do not edit. */
 
+export type RuntimeAction =
+  | {
+      enabled: boolean;
+      kind: "tracking";
+    }
+  | {
+      enabled: boolean;
+      kind: "enable_player";
+      player_id: PlayerId;
+    }
+  | {
+      kind: "select";
+      mode: SelectionMode;
+    }
+  | {
+      kind: "discover";
+    }
+  | {
+      enabled: boolean;
+      kind: "startup";
+    }
+  | {
+      enabled: boolean;
+      kind: "auto_overlay";
+    }
+  | {
+      kind: "close_to_tray";
+    };
+export type Platform = "windows" | "linux" | "macos";
+export type SelectionMode =
+  | {
+      kind: "automatic";
+    }
+  | {
+      kind: "app_pin";
+      player_id: PlayerId;
+    }
+  | {
+      kind: "stream_pin";
+      player_id: PlayerId;
+      session_id: string;
+    };
 export type FailureCode =
   | "invalid_input"
   | "unsupported"
@@ -13,16 +55,20 @@ export type MatchConfidence = "confident" | "uncertain";
 export type LyricOrigin = "provider" | "import" | "personal";
 export type TimingKind = "supplied" | "unsynced";
 export type RuntimeMode = "native" | "fixture";
-export type Platform = "windows" | "linux" | "macos";
 export type PlaybackStatus = "playing" | "paused" | "buffering" | "stopped" | "unknown";
 
 /**
  * Export root keeps every boundary type reachable in a single versioned schema.
  */
 export interface Contract {
+  action: RuntimeAction;
   failure: CommandFailure;
   lyric_version: LyricVersion;
   snapshot: RuntimeSnapshot;
+}
+export interface PlayerId {
+  nativeId: string;
+  platform: Platform;
 }
 export interface CommandFailure {
   code: FailureCode;
@@ -57,11 +103,18 @@ export interface LyricWord {
   text: string;
 }
 export interface RuntimeSnapshot {
+  autoOverlay: boolean;
   capabilities: Capabilities;
+  closeNotice: boolean;
   generation: Counter;
+  players: PlayerInfo[];
   revision: Counter;
   schema: number;
+  selectedSessionId?: string | null;
+  selection: SelectionMode;
   sessions: PlaybackSnapshot[];
+  startAtSignIn: boolean;
+  statusMessage: string;
   trackingEnabled: boolean;
 }
 export interface Capabilities {
@@ -70,6 +123,12 @@ export interface Capabilities {
   platform: Platform;
   reason: string;
   trackingAvailable: boolean;
+}
+export interface PlayerInfo {
+  available: boolean;
+  enabled: boolean;
+  id: PlayerId;
+  name: string;
 }
 export interface PlaybackSnapshot {
   observedAtMs: Counter;
@@ -80,10 +139,7 @@ export interface PlaybackSnapshot {
   recording?: Recording | null;
   sessionId: string;
   status: PlaybackStatus;
-}
-export interface PlayerId {
-  nativeId: string;
-  platform: Platform;
+  streamPinAvailable: boolean;
 }
 export interface Recording {
   album?: string | null;

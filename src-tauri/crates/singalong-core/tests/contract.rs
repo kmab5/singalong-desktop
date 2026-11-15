@@ -33,6 +33,7 @@ fn unknown_timing_and_unicode_survive_the_wire_without_inventing_zeroes() {
         position_ms: None,
         observed_at_ms: Counter::new(9007199254740993),
         rate: None,
+        stream_pin_available: false,
     });
     let value = serde_json::to_value(&snapshot).unwrap();
     assert!(value["sessions"][0]["positionMs"].is_null());

@@ -10,6 +10,39 @@ pub(super) struct Repository {
     connection: Connection,
 }
 impl Repository {
+    pub fn record_play(
+        &mut self,
+        recording: String,
+        occurrence: String,
+        wall_ms: u64,
+    ) -> Result<bool> {
+        if occurrence.is_empty() || occurrence.len() > 256 || wall_ms > i64::MAX as u64 {
+            return Err(StorageError::Invalid("invalid occurrence"));
+        }
+        let tx = self.connection.transaction()?;
+        let existing: Option<String> = tx
+            .query_row(
+                "SELECT recording_id FROM occurrences WHERE id=?",
+                [&occurrence],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if let Some(existing) = existing {
+            if existing != recording {
+                return Err(StorageError::Invalid(
+                    "occurrence belongs to another recording",
+                ));
+            }
+            return Ok(false);
+        }
+        tx.execute(
+            "INSERT INTO occurrences(id,recording_id,played_at_ms) VALUES(?1,?2,?3)",
+            params![occurrence, recording, wall_ms as i64],
+        )?;
+        tx.execute("UPDATE recordings SET play_count=play_count+1,last_played_ms=MAX(COALESCE(last_played_ms,0),?2) WHERE id=?1", params![recording, wall_ms as i64])?;
+        tx.commit()?;
+        Ok(true)
+    }
     pub fn open(path: &Path) -> Result<Self> {
         let mut connection = Connection::open(path)?;
         connection.busy_timeout(Duration::from_secs(3))?;

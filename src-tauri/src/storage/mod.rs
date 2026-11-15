@@ -122,6 +122,9 @@ impl Storage {
     pub fn resolve(&self, value: Recording, previous: Option<String>) -> Result<Recording> {
         self.call(move |db| db.resolve(value, previous))
     }
+    pub fn record_play(&self, recording: String, occurrence: String, wall_ms: u64) -> Result<bool> {
+        self.call(move |db| db.record_play(recording, occurrence, wall_ms))
+    }
     pub fn save_versions(&self, id: String, versions: Vec<LyricVersion>) -> Result<()> {
         self.call(move |db| db.save_versions(id, versions))
     }

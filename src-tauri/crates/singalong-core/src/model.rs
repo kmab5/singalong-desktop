@@ -51,20 +51,20 @@ impl JsonSchema for Counter {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Platform {
     Windows,
     Linux,
     Macos,
 }
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PlayerId {
     pub platform: Platform,
     pub native_id: String,
 }
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(transparent)]
 pub struct SessionId(pub String);
 impl From<&str> for SessionId {
@@ -84,7 +84,7 @@ pub struct Recording {
     pub version_label: Option<String>,
     pub file_name: Option<String>,
 }
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PlaybackStatus {
     Playing,
@@ -104,6 +104,7 @@ pub struct PlaybackSnapshot {
     pub position_ms: Option<Counter>,
     pub observed_at_ms: Counter,
     pub rate: Option<f64>,
+    pub stream_pin_available: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -183,6 +184,13 @@ pub struct RuntimeSnapshot {
     pub capabilities: Capabilities,
     pub sessions: Vec<PlaybackSnapshot>,
     pub tracking_enabled: bool,
+    pub players: Vec<PlayerInfo>,
+    pub selection: SelectionMode,
+    pub selected_session_id: Option<SessionId>,
+    pub status_message: String,
+    pub start_at_sign_in: bool,
+    pub auto_overlay: bool,
+    pub close_notice: bool,
 }
 impl RuntimeSnapshot {
     pub fn foundation() -> Self {
@@ -207,6 +215,13 @@ impl RuntimeSnapshot {
             },
             sessions: vec![],
             tracking_enabled: false,
+            players: vec![],
+            selection: SelectionMode::Automatic,
+            selected_session_id: None,
+            status_message: String::new(),
+            start_at_sign_in: false,
+            auto_overlay: false,
+            close_notice: false,
         }
     }
 }
@@ -235,4 +250,49 @@ pub struct Contract {
     pub snapshot: RuntimeSnapshot,
     pub lyric_version: LyricVersion,
     pub failure: CommandFailure,
+    pub action: RuntimeAction,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(
+    tag = "kind",
+    rename_all = "snake_case",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
+pub enum SelectionMode {
+    #[default]
+    Automatic,
+    AppPin {
+        player_id: PlayerId,
+    },
+    StreamPin {
+        player_id: PlayerId,
+        session_id: SessionId,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PlayerInfo {
+    pub id: PlayerId,
+    pub name: String,
+    pub enabled: bool,
+    pub available: bool,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(
+    tag = "kind",
+    rename_all = "snake_case",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
+pub enum RuntimeAction {
+    Tracking { enabled: bool },
+    EnablePlayer { player_id: PlayerId, enabled: bool },
+    Select { mode: SelectionMode },
+    Discover,
+    Startup { enabled: bool },
+    AutoOverlay { enabled: bool },
+    CloseToTray,
 }
