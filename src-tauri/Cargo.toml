@@ -22,6 +22,9 @@ tauri = { version = "=2.11.5", optional = true, features = ["tray-icon"] }
 
 tauri-plugin-single-instance = { version = "=2.4.0", optional = true }
 tauri-plugin-autostart = { version = "=2.5.0", optional = true }
+reqwest = { version = "=0.13.4", default-features = false, features = ["native-tls"] }
+tokio = { version = "=1.53.1", features = ["rt", "time", "macros"] }
+httpdate = "=1.0.3"
 
 [build-dependencies]
 tauri-build = "=2.6.3"

@@ -1,6 +1,7 @@
 //! Application construction and shared P0 probe utilities.
 pub mod commands;
 pub mod platform;
+pub mod providers;
 pub mod runtime;
 pub mod storage;
 

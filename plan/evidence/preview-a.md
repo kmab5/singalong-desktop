@@ -23,3 +23,13 @@ Desktop-generated content hashes include all serialized timing fields. Imported 
 No provider network, cache orchestration or floating-reader behavior is established by these core tests. Those remain the next dependencies for Preview A.
 
 Verification: `cargo test --manifest-path src-tauri/Cargo.toml --offline --workspace --lib --tests` passed all 41 tests (12 new lyric tests); core all-target Clippy with warnings denied passed; Cargo formatting and `git diff --check` passed. This checkpoint builds/tests Rust libraries, not a newly verified desktop executable.
+
+## Provider worker checkpoint — 2026-11-15
+
+Added fixed LRCLIB and lyrics.ovh endpoints, 10-second timeouts, 2 MB streaming/body limits, disabled redirects and client retries, client identification, sequential 750 ms request pacing and provider-specific monotonic cooldowns. Retry-After accepts seconds and HTTP dates. Primary errors can use successful fallback, but failed sources cannot establish a definitive miss. A bounded single worker cancels obsolete jobs; one replaceable result slot prevents stale unread results blocking a newer song. It performs no database writes.
+
+Nine original local-server tests cover primary/fallback provenance, failures versus misses, 404/429/503, malformed JSON, declared and chunked oversized bodies, stalled bodies, cancellation during requests/pacing, cooldown reuse, worker cancellation and stale completed results. A thirteen-test core lyric suite also caps aggregate candidate expansion. The mock server explicitly resets accepted Windows sockets to blocking mode and reads complete headers; ten consecutive provider-suite runs passed after correcting that harness issue.
+
+The provider API behavior was checked against [LRCLIB's official documentation](https://lrclib.net/docs.txt) and [lyrics.ovh's API source](https://github.com/NTag/lyrics.ovh/blob/master/apiary.apib). No accounts, keys, scraping or write endpoints were added. No live provider response or UI integration is claimed by this checkpoint; shared runtime caching/reader integration is next.
+
+Verification at this checkpoint: all 51 Rust library/integration tests passed; workspace library/test Clippy with warnings denied and formatting passed. Provider review found no important implementation defect; its additional cancellation/body-limit tests were added. Desktop UI/native provider behavior remains unverified.

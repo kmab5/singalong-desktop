@@ -254,3 +254,25 @@ fn separate_version_labels_require_the_complete_matching_edition() {
         assert!(matching::confidence(&input, &candidate).is_none());
     }
 }
+
+#[test]
+fn candidate_batches_bound_total_expanded_content() {
+    let input = recording("Fixture song", "Fixture artist");
+    let lyrics = format!("{}{}", "[00:01]".repeat(20), "x".repeat(50_000));
+    let candidates = (0..3)
+        .map(|id| matching::ProviderSong {
+            id,
+            synced_lyrics: Some(lyrics.clone()),
+            ..song()
+        })
+        .collect();
+    let result = matching::versions(&input, candidates, false);
+    assert!(
+        result
+            .iter()
+            .flat_map(|v| &v.lines)
+            .map(|l| l.text.len())
+            .sum::<usize>()
+            <= 2_000_000
+    );
+}

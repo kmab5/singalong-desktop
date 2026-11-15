@@ -103,6 +103,7 @@ pub fn versions(
     inferred: bool,
 ) -> Vec<LyricVersion> {
     let mut versions = vec![];
+    let mut expanded_bytes = 0;
     for song in songs {
         let Some(mut confidence) = confidence(recording, &song) else {
             continue;
@@ -123,6 +124,10 @@ pub fn versions(
             });
         if !lines.iter().any(|r| !r.text.trim().is_empty()) {
             continue;
+        }
+        expanded_bytes += lines.iter().map(|r| r.text.len()).sum::<usize>();
+        if expanded_bytes > super::MAX_BYTES {
+            break;
         }
         let content =
             serde_json::to_vec(&lines).expect("lyric lines contain only serializable values");
