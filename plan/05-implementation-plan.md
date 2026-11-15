@@ -226,7 +226,7 @@ Evidence: [P2 tracking and lifecycle](evidence/tracking.md). Native integration 
 - [ ] Implement preview token, deterministic collision remapping and idempotent merge tests.
 - [x] Import supported Android all/preferred and full/links/none archives, preserving omitted-section semantics. Export a full desktop backup; defer selective export controls.
 - [x] Preserve current tracking/consent/startup registration and network policy. Retain translations and valid unsupported Android settings as inert data; report restored versus retained/unapplied content. Apply supported settings only if selected, atomically with library data.
-- [ ] Define a versioned full desktop format and verify desktop-to-desktop round trips, including inert translation/preference data. Reverse Android export is deferred.
+- [x] Define a versioned full desktop format and verify desktop-to-desktop round trips, including inert translation/preference data. Synthetic codec/database round trips passed; native file-dialog and installation checks remain separate. Reverse Android export is deferred.
 - [ ] Test ZIP64, large/unlimited archives, corrupt hashes/headers, settings errors, disk-full and repeated restore.
 - [ ] Gate: Android migration preserves content/edits/timing/provenance without duplicates or silently re-enabling tracking.
 

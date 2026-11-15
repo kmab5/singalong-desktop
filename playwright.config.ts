@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   workers: 1,
+  // Allow cold Vite transforms and accessibility scans on memory-constrained Windows hosts.
+  timeout: 90_000,
   use: { channel: 'chrome', headless: true, viewport: { width: 1120, height: 760 } },
   webServer: [
     { command: 'npm run dev:fixture', url: 'http://127.0.0.1:1420', reuseExistingServer: false },

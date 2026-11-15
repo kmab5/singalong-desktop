@@ -25,6 +25,7 @@ test('tracking controls send explicit choices and keep native lyrics honest', as
   await page.getByRole('button',{name:'Start tracking',exact:true}).click();
   await expect(page.getByRole('button',{name:'Stop tracking',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Now',exact:true}).click();
+  await page.locator('.session-picker summary').click();
   await page.getByRole('button',{name:'Pin Synthetic player app'}).click();
   await expect(page.getByRole('status')).toHaveText('Waiting for pinned player');
   await page.getByRole('button',{name:'Return to automatic'}).click();

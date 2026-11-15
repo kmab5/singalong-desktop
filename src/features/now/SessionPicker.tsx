@@ -1,9 +1,8 @@
 import type { RuntimeSnapshot } from '../../bridge/types';
 import type { RunAction } from '../settings/Players';
 export function SessionPicker({ state, act, busy }: { state: RuntimeSnapshot; act: RunAction; busy: boolean }) {
-  return <section className="session-picker" aria-label="Playback source"><div className="control-row"><span>{state.selection.kind === 'automatic' ? 'Automatic selection' : state.selection.kind === 'app_pin' ? 'Pinned app' : 'Pinned stream · this session only'}</span><button disabled={busy || state.selection.kind === 'automatic'} onClick={() => act({ kind: 'select', mode: { kind: 'automatic' } })}>Return to automatic</button></div>
-    <p role="status">{state.statusMessage}</p>
+  return <section className="session-picker" aria-label="Playback source"><details><summary>Playback source · {state.selection.kind === 'automatic' ? 'Automatic selection' : state.selection.kind === 'app_pin' ? 'Pinned app' : 'Pinned stream · this session only'}</summary><div className="control-row"><button disabled={busy || state.selection.kind === 'automatic'} onClick={() => act({ kind: 'select', mode: { kind: 'automatic' } })}>Return to automatic</button></div>
     {state.players.filter(player => player.enabled).map(player => <div className="source-row" key={JSON.stringify(player.id)}><span>{player.name}</span><button disabled={busy} onClick={() => act({ kind: 'select', mode: { kind: 'app_pin', playerId: player.id } })}>Pin {player.name} app</button></div>)}
     {state.sessions.map(session => <div className="source-row" key={session.sessionId}><span>{session.playerName} · {session.status}<small>{session.recording?.title ?? 'Track metadata unavailable'}</small></span><button disabled={busy || !session.streamPinAvailable} title={session.streamPinAvailable ? 'Wait for this exact session; never fall back' : 'Windows does not expose a reliable individual browser stream identity'} onClick={() => act({ kind: 'select', mode: { kind: 'stream_pin', playerId: session.playerId, sessionId: session.sessionId } })}>Pin stream</button></div>)}
-  </section>;
+  </details>{state.statusMessage&&<p role="status">{state.statusMessage}</p>}</section>;
 }

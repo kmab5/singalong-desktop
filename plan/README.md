@@ -1,8 +1,8 @@
-> Current implementation-only status: the entire first-stable source is authorized. Production source for the first-stable scope is implemented; tests and native/browser probes remain paused. See [current evidence](evidence/stable-implementation.md). Earlier verification records apply only to their recorded revisions.
+> Current implementation-only status: the entire first-stable source is authorized. Production source for the first-stable scope is implemented; automated checks and design review have resumed; live native testing remains excluded. See [design and automated verification](evidence/design-verification.md) and [implementation evidence](evidence/stable-implementation.md). Earlier verification records apply only to their recorded revisions.
 
 # Singalong desktop migration plans
 
-Prepared 2026-11-13. Updated 2026-11-15. Status: **P1 foundation and storage implemented; native media/window probes exercised; remaining player, hardware and actual lock/suspend gates stay open. P2.1 tracking is implemented; P2.2 has reader-dependent and native lifecycle gates remaining. P3/P4 readers, P5.1 library/search, P6 backup integration and P9.1 settings/packaging source are implemented. Verification remains incomplete and testing is paused at the user’s request.**
+Prepared 2026-11-13. Updated 2026-11-15. Status: **P1 foundation and storage implemented; native media/window probes exercised; remaining player, hardware and actual lock/suspend gates stay open. P2.1 tracking is implemented; P2.2 has reader-dependent and native lifecycle gates remaining. P3/P4 readers, P5.1 library/search, P6 backup integration and P9.1 settings/packaging source are implemented. Automated verification has resumed; native live verification remains excluded at the user’s request.**
 
 Current evidence: [foundation](evidence/foundation.md), [storage](evidence/storage.md), [media sessions](evidence/platform-probes.md), [window lifecycle](evidence/window-probes.md). Reproduction commands: [probe runbook](../src-tauri/README.md).
 

@@ -15,7 +15,9 @@ async function start() {
   } else if (__FIXTURE__) {
     const { createFixture } = await import('./bridge/fixture');
     const fixture = createFixture();
-    root.render(<React.StrictMode><App transport={fixture} scenario={fixture.setScenario} /></React.StrictMode>);
+    const overlay = new URLSearchParams(location.search).has('overlay');
+    if (overlay) document.documentElement.classList.add('floating-document');
+    root.render(<React.StrictMode>{overlay ? <FloatingReader transport={fixture} /> : <App transport={fixture} scenario={fixture.setScenario} />}</React.StrictMode>);
   } else {
     root.render(<main className="standalone"><h1>Open Singalong on your desktop</h1><p>This build needs the desktop application. The browser fixture is a separate local development mode.</p></main>);
   }

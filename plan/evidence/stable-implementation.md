@@ -1,5 +1,7 @@
 # Stable implementation progress
 
+> Subsequent authorization: design review, builds and automated synthetic tests resumed. Live native testing remains excluded. See [current verification](design-verification.md). The implementation-only record below describes the earlier pause.
+
 User authorization: finish the entire confirmed first-stable scope, then test. Testing is paused from 2026-11-15; do not run tests/probes or native/browser automation during coding. Existing passing evidence applies only to the recorded earlier revisions. Source completion below is not verification or release readiness.
 
 | Area | Coding state | Verification |
