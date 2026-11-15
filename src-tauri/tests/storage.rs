@@ -234,3 +234,20 @@ fn occurrence_retries_are_idempotent_and_keep_history_atomic() {
     assert_eq!(row.play_count, 1);
     assert_eq!(row.last_played_ms, Some(1000));
 }
+
+#[test]
+fn read_only_lookup_finds_saved_recordings_without_creating_or_enriching_rows() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = Storage::open(dir.path().join("db")).unwrap();
+    assert!(db.find(song(), None).unwrap().is_none());
+    assert!(db.list(0, 10).unwrap().is_empty());
+    let mut original = song();
+    original.album = None;
+    original.version_label = Some("Studio".into());
+    let saved = db.resolve(original, None).unwrap();
+    assert_eq!(db.find(song(), None).unwrap().unwrap().id, saved.id);
+    assert!(db.list(0, 10).unwrap()[0].recording.album.is_none());
+    let mut live = song();
+    live.version_label = Some("Live".into());
+    assert!(db.find(live, Some(saved.id)).unwrap().is_none());
+}

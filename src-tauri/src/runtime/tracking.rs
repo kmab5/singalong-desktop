@@ -22,11 +22,12 @@ impl Engine {
         let settings = db.settings().map_err(|e| e.to_string())?;
         let mut snapshot = RuntimeSnapshot::foundation();
         snapshot.capabilities.tracking_available = cfg!(windows);
-        snapshot.capabilities.reason="Enable players to follow their exposed Windows media sessions. Lyrics lookup is the next phase.".into();
+        snapshot.capabilities.reason="Enable players to follow their exposed Windows media sessions. Saved lyrics remain available offline.".into();
         snapshot.tracking_enabled = settings.tracking_enabled;
         snapshot.selection = settings.selection.clone();
         snapshot.start_at_sign_in = settings.start_at_sign_in;
         snapshot.auto_overlay = settings.auto_overlay;
+        snapshot.offline = settings.offline;
         snapshot.players = settings
             .enabled_players
             .iter()
@@ -94,6 +95,10 @@ impl Engine {
                 next.selection = mode;
             }
             RuntimeAction::AutoOverlay { enabled } => next.auto_overlay = enabled,
+            RuntimeAction::Offline { enabled } => next.offline = enabled,
+            RuntimeAction::ReaderActive { .. }
+            | RuntimeAction::RetryLyrics
+            | RuntimeAction::ShowOverlay { .. } => return Ok(()),
             RuntimeAction::Startup { enabled } => next.start_at_sign_in = enabled,
             RuntimeAction::CloseToTray => next.close_notice_ack = true,
             RuntimeAction::Discover => return Ok(()),
@@ -107,6 +112,7 @@ impl Engine {
         self.snapshot.selection = self.settings.selection.clone();
         self.snapshot.start_at_sign_in = self.settings.start_at_sign_in;
         self.snapshot.auto_overlay = self.settings.auto_overlay;
+        self.snapshot.offline = self.settings.offline;
         if self.settings.close_notice_ack {
             self.snapshot.close_notice = false;
         }
@@ -145,6 +151,23 @@ impl Engine {
             ""
         }
         .into();
+    }
+    pub fn selected(&self) -> Option<PlaybackSnapshot> {
+        self.snapshot
+            .sessions
+            .iter()
+            .find(|s| Some(&s.session_id) == self.snapshot.selected_session_id.as_ref())
+            .cloned()
+    }
+    pub fn qualified_id(&self, recording: &str) -> Option<String> {
+        if self
+            .pending
+            .as_ref()
+            .is_some_and(|(r, _, _)| r.id == recording)
+        {
+            return None;
+        }
+        self.saved_ids.get(recording).cloned()
     }
     pub fn unavailable(&mut self, message: &str) {
         self.snapshot.sessions.clear();

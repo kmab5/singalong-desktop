@@ -122,11 +122,22 @@ impl Storage {
     pub fn resolve(&self, value: Recording, previous: Option<String>) -> Result<Recording> {
         self.call(move |db| db.resolve(value, previous))
     }
+    pub fn find(&self, value: Recording, previous: Option<String>) -> Result<Option<Recording>> {
+        self.call(move |db| db.find(value, previous))
+    }
     pub fn record_play(&self, recording: String, occurrence: String, wall_ms: u64) -> Result<bool> {
         self.call(move |db| db.record_play(recording, occurrence, wall_ms))
     }
     pub fn save_versions(&self, id: String, versions: Vec<LyricVersion>) -> Result<()> {
         self.call(move |db| db.save_versions(id, versions))
+    }
+    pub fn save_versions_checked(
+        &self,
+        id: String,
+        versions: Vec<LyricVersion>,
+        token: crate::platform::Cancellation,
+    ) -> Result<()> {
+        self.call(move |db| db.save_versions_checked(id, versions, &|| token.cancelled()))
     }
     pub fn versions(&self, id: String) -> Result<Vec<LyricVersion>> {
         self.call(move |db| db.versions(id))

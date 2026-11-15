@@ -69,11 +69,20 @@ pub async fn runtime_action(
     use tauri::Manager;
     use tauri_plugin_autostart::ManagerExt;
     authorize(window.label(), Command::Control)?;
+    if let RuntimeAction::ShowOverlay { visible } = action {
+        return crate::windows::overlay::manual(window.app_handle(), visible)
+            .map_err(|_| failure("Could not change floating reader visibility."));
+    }
     if matches!(action, RuntimeAction::Quit) {
         window.app_handle().exit(0);
         return Ok(());
     }
     let runtime = state.inner().clone();
+    let overlay_preference = if let RuntimeAction::AutoOverlay { enabled } = &action {
+        Some(*enabled)
+    } else {
+        None
+    };
     let hide = matches!(action, RuntimeAction::CloseToTray);
     let native_window = window.clone();
     tauri::async_runtime::spawn_blocking(move || {
@@ -117,10 +126,14 @@ pub async fn runtime_action(
     })
     .await
     .map_err(|_| failure("The tracking operation could not finish."))??;
+    if let Some(enabled) = overlay_preference {
+        crate::windows::overlay::preference(window.app_handle(), enabled);
+    }
     if hide {
         window
             .hide()
             .map_err(|_| failure("Could not hide the main window."))?;
+        state.main_visible(false);
     }
     Ok(())
 }

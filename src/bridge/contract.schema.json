@@ -95,6 +95,20 @@
         "cancelled"
       ]
     },
+    "LookupStatus": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "waiting",
+        "loading",
+        "ready",
+        "offline",
+        "not_found",
+        "instrumental",
+        "insufficient_metadata",
+        "failed"
+      ]
+    },
     "LyricLine": {
       "type": "object",
       "required": [
@@ -373,6 +387,69 @@
       },
       "additionalProperties": false
     },
+    "ReaderState": {
+      "type": "object",
+      "required": [
+        "cached",
+        "message",
+        "positionAvailable",
+        "status"
+      ],
+      "properties": {
+        "activeLine": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "maximum": 19999,
+          "minimum": 0
+        },
+        "cached": {
+          "type": "boolean"
+        },
+        "countdownSeconds": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "positionAvailable": {
+          "type": "boolean"
+        },
+        "retryAfterMs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Counter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/definitions/LookupStatus"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/LyricVersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "Recording": {
       "type": "object",
       "required": [
@@ -426,6 +503,78 @@
     },
     "RuntimeAction": {
       "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "visible"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "show_overlay"
+              ]
+            },
+            "visible": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "enabled",
+            "kind"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "reader_active"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "enabled",
+            "kind"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "offline"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "retry_lyrics"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
         {
           "type": "object",
           "required": [
@@ -586,7 +735,10 @@
         "capabilities",
         "closeNotice",
         "generation",
+        "offline",
+        "overlayVisible",
         "players",
+        "reader",
         "revision",
         "schema",
         "selection",
@@ -608,11 +760,20 @@
         "generation": {
           "$ref": "#/definitions/Counter"
         },
+        "offline": {
+          "type": "boolean"
+        },
+        "overlayVisible": {
+          "type": "boolean"
+        },
         "players": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/PlayerInfo"
           }
+        },
+        "reader": {
+          "$ref": "#/definitions/ReaderState"
         },
         "revision": {
           "$ref": "#/definitions/Counter"

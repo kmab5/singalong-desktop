@@ -16,6 +16,7 @@ const ajv = new Ajv({ strict: false, strictNumbers: true, code: {
 ajv.addFormat('uint64-decimal', value => /^(0|[1-9][0-9]{0,19})$/.test(value) && BigInt(value) <= 18446744073709551615n);
 // Numeric bounds and finite-number checks are already encoded by JSON Schema.
 ajv.addFormat('uint8', true);
+ajv.addFormat('uint32', true);
 ajv.addFormat('double', true);
 const validate = ajv.compile({ $ref: '#/definitions/RuntimeSnapshot', definitions: schema.definitions });
 const files = new Map([

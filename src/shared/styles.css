@@ -4,3 +4,24 @@
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
 .control-row,.source-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;margin:14px 0}.session-picker{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:28px;font-size:13px}.source-row small,.player-option small{display:block;color:var(--muted);font-size:12px;margin-top:5px;overflow-wrap:anywhere}.source-row>span{min-width:0;flex:1}.player-option{display:flex;align-items:flex-start;gap:14px;margin:20px 0}.player-option input{margin-top:5px;accent-color:var(--purple);width:18px;height:18px;flex-shrink:0}fieldset{border:1px solid var(--line);border-radius:8px;margin:24px 0;padding:4px 18px}legend{padding:0 8px;font-size:13px;color:var(--muted)}button:disabled{opacity:.45;cursor:default}.close-notice{padding:20px;background:var(--surface);border:1px solid var(--purple);border-radius:10px;margin-bottom:24px}.track h2,.track p{overflow-wrap:anywhere}
+
+.live-reader { min-height: 240px; }
+.live-reader .lyric-lines { max-height: 45vh; overflow-y: auto; overscroll-behavior: contain; padding: 15vh 1rem; scrollbar-width: thin; }
+.live-reader .lyric-lines p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 1.2rem 0; }
+.reader-follow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: var(--muted, #b8b5c4); font-size: .85rem; }
+.reader-help, .match-notice { font-size: .9rem; }
+.match-notice { color: #f1cb88; }
+.lyric-attribution { display: block; overflow-wrap: anywhere; margin-top: 1rem; }
+.floating-shell { padding: 1rem; min-width: 280px; }
+.floating-shell header { display: block; }
+.floating-shell h1 { font-size: 1.2rem; overflow-wrap: anywhere; }
+.floating-shell header p { margin: .35rem 0; }
+.floating-shell .reader { padding: .8rem 0; background: none; }
+.floating-shell .lyric-lines { max-height: 55vh; padding: 10vh .4rem; }
+.floating-shell .lyric-lines p { font-size: 1.35rem; }
+.floating-shell .reader-caption { flex-wrap: wrap; }
+.live-reader .match-notice, .live-reader .reader-help { font-size: .9rem; margin: .6rem 0; }
+.live-reader .reader-caption { margin: .5rem 0; }
+.live-reader .lyric-lines { position: relative; }
+.floating-shell .live-reader { margin: .8rem 0 0; }
+.floating-shell .reader-follow { font-size: .8rem; }

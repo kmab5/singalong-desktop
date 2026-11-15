@@ -31,12 +31,22 @@ pub fn run() {
             let runtime = runtime::Runtime::native(
                 db.clone(),
                 std::sync::Arc::new(move |snapshot| {
-                    let _ = handle.emit("runtime-state", snapshot);
+                    for window in handle.webview_windows().values() {
+                        if window.is_visible().unwrap_or(false)
+                            && !window.is_minimized().unwrap_or(false)
+                        {
+                            let _ = window.emit("runtime-state", &snapshot);
+                        }
+                    }
+                    let app = handle.clone();
+                    let _ =
+                        handle.run_on_main_thread(move || windows::overlay::sync(&app, &snapshot));
                 }),
             )
             .map_err(std::io::Error::other)?;
             app.manage(runtime.clone());
             app.manage(db.clone());
+            runtime.main_visible(!std::env::args().any(|arg| arg == "--tray"));
             let window = tauri::WebviewWindowBuilder::new(
                 app,
                 "main",
@@ -49,10 +59,17 @@ pub fn run() {
             .visible(!std::env::args().any(|arg| arg == "--tray"))
             .build()?;
             windows::tray(app)?;
+            windows::overlay::install(app)?;
             #[cfg(windows)]
             windows::hooks::install(window.hwnd()?, app.handle().clone())?;
             let close_window = window.clone();
             window.on_window_event(move |event| {
+                if matches!(event, tauri::WindowEvent::Resized(_)) {
+                    runtime.main_visible(
+                        close_window.is_visible().unwrap_or(false)
+                            && !close_window.is_minimized().unwrap_or(false),
+                    );
+                }
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
                     // Settings read on a blocking task; the window event thread stays responsive.
@@ -61,11 +78,14 @@ pub fn run() {
                     let window = close_window.clone();
                     tauri::async_runtime::spawn_blocking(move || match db.settings() {
                         Ok(settings) if settings.close_notice_ack => {
-                            let _ = window.hide();
+                            if window.hide().is_ok() {
+                                runtime.main_visible(false);
+                            }
                         }
                         _ => {
                             runtime.close_notice();
                             let _ = window.show();
+                            runtime.main_visible(true);
                         }
                     });
                 }

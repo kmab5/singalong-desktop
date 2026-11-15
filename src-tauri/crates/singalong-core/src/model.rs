@@ -190,7 +190,10 @@ pub struct RuntimeSnapshot {
     pub status_message: String,
     pub start_at_sign_in: bool,
     pub auto_overlay: bool,
+    pub overlay_visible: bool,
     pub close_notice: bool,
+    pub offline: bool,
+    pub reader: ReaderState,
 }
 impl RuntimeSnapshot {
     pub fn foundation() -> Self {
@@ -221,7 +224,10 @@ impl RuntimeSnapshot {
             status_message: String::new(),
             start_at_sign_in: false,
             auto_overlay: false,
+            overlay_visible: false,
             close_notice: false,
+            offline: false,
+            reader: ReaderState::default(),
         }
     }
 }
@@ -291,6 +297,16 @@ pub struct PlayerInfo {
     deny_unknown_fields
 )]
 pub enum RuntimeAction {
+    ShowOverlay {
+        visible: bool,
+    },
+    ReaderActive {
+        enabled: bool,
+    },
+    Offline {
+        enabled: bool,
+    },
+    RetryLyrics,
     Tracking {
         enabled: bool,
     },
@@ -311,4 +327,32 @@ pub enum RuntimeAction {
     },
     CloseToTray,
     Quit,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum LookupStatus {
+    #[default]
+    Idle,
+    Waiting,
+    Loading,
+    Ready,
+    Offline,
+    NotFound,
+    Instrumental,
+    InsufficientMetadata,
+    Failed,
+}
+#[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ReaderState {
+    pub status: LookupStatus,
+    pub version: Option<LyricVersion>,
+    #[schemars(range(min = 0, max = 19999))]
+    pub active_line: Option<u32>,
+    pub countdown_seconds: Option<Counter>,
+    pub position_available: bool,
+    pub cached: bool,
+    pub message: String,
+    pub retry_after_ms: Option<Counter>,
 }

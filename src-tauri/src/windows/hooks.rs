@@ -71,12 +71,16 @@ unsafe extern "system" fn callback(
         }
         if changed {
             let suspended = state.locked || state.suspended;
+            super::overlay::system_hidden(&state.app, suspended);
             if suspended {
                 for window in state.app.webview_windows().values() {
                     let _ = window.hide();
                 }
             }
             state.app.state::<Runtime>().suspend(suspended);
+            if suspended {
+                state.app.state::<Runtime>().main_visible(false);
+            }
         }
         if message == WM_NCDESTROY {
             let _ = WTSUnRegisterSessionNotification(hwnd);

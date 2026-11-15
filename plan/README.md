@@ -1,6 +1,6 @@
 # Singalong desktop migration plans
 
-Prepared 2026-11-13. Updated 2026-11-15. Status: **P1 foundation and storage implemented; native media/window probes exercised; remaining player, hardware and actual lock/suspend gates stay open. P2.1 tracking is implemented; P2.2 has reader-dependent and native lifecycle gates remaining. No usable application preview yet.**
+Prepared 2026-11-13. Updated 2026-11-15. Status: **P1 foundation and storage implemented; native media/window probes exercised; remaining player, hardware and actual lock/suspend gates stay open. P2.1 tracking is implemented; P2.2 has reader-dependent and native lifecycle gates remaining. P3 lookup/cache and P4a reader source are implemented; verification remains incomplete. All stable-scope coding is authorized, with testing paused at the user’s request.**
 
 Current evidence: [foundation](evidence/foundation.md), [storage](evidence/storage.md), [media sessions](evidence/platform-probes.md), [window lifecycle](evidence/window-probes.md). Reproduction commands: [probe runbook](../src-tauri/README.md).
 
@@ -32,3 +32,5 @@ GitHub Pages is solely the product/download landing page. It is separate from th
 The source audit did not run Android builds/device tests or validate desktop players. User approval confirms the plan, not implementation or runtime support. Start implementation only when requested, following [the revised task sequence](05-implementation-plan.md).
 
 Current implementation: P1.1/P1.2 complete; P2.1 implemented and verified; P2.2 partial pending reader-dependent controls and native lifecycle checks. See [P2 evidence](evidence/tracking.md).
+
+Current coding handoff: [stable implementation progress](evidence/stable-implementation.md). This separates source completion from deferred verification.

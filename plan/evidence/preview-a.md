@@ -33,3 +33,13 @@ Nine original local-server tests cover primary/fallback provenance, failures ver
 The provider API behavior was checked against [LRCLIB's official documentation](https://lrclib.net/docs.txt) and [lyrics.ovh's API source](https://github.com/NTag/lyrics.ovh/blob/master/apiary.apib). No accounts, keys, scraping or write endpoints were added. No live provider response or UI integration is claimed by this checkpoint; shared runtime caching/reader integration is next.
 
 Verification at this checkpoint: all 51 Rust library/integration tests passed; workspace library/test Clippy with warnings denied and formatting passed. Provider review found no important implementation defect; its additional cancellation/body-limit tests were added. Desktop UI/native provider behavior remains unverified.
+
+## Shared runtime and basic reader — implementation checkpoint
+
+Added read-only recording matching, immediate open-reader lookup, qualified-only cache writes, saved-selection precedence, Offline cancellation, shared main/floating state, supplied-line following, manual-scroll/resume and timing freshness fallback. Every published snapshot reconciles reader identity before emission. Terminal lookup outcomes are bounded to 256 recent entries, with miss/error lifetimes and explicit retry; provider cooldowns remain authoritative. Hidden windows do not receive rendering updates; showing a window requests fresh shared state.
+
+The local-only overlay has native title-bar dragging/resizing, main/tray show/hide/recovery, opt-in auto-show and manual suppression. System hiding is separate from manual hiding, and stale queued auto-show snapshots are rejected. Lock/suspend recovery fixes are source-reviewed but have not been exercised.
+
+Before the user paused testing, native Windows Media Player playback produced real provider lyrics with Possible match/Unsynced/Saved offline labels; the floating reader displayed the same active recording and closed to hidden. Main reader browser tests and coordinator regressions were run under the earlier testing authorization. Native stop/restart, offline cached reopen, automatic-display recovery, Quit and the wider compatibility matrix remain incomplete. The last native test left Offline mode enabled; no user preferences were changed after Computer Use was stopped.
+
+On 2026-11-15 the user requested completing the entire stable implementation before more testing. Subsequent source changes have not been executed or verified. No preview/stable release or installer publication is claimed.

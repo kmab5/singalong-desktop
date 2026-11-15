@@ -2,6 +2,21 @@
 
 export type RuntimeAction =
   | {
+      kind: "show_overlay";
+      visible: boolean;
+    }
+  | {
+      enabled: boolean;
+      kind: "reader_active";
+    }
+  | {
+      enabled: boolean;
+      kind: "offline";
+    }
+  | {
+      kind: "retry_lyrics";
+    }
+  | {
       enabled: boolean;
       kind: "tracking";
     }
@@ -58,6 +73,16 @@ export type MatchConfidence = "confident" | "uncertain";
 export type LyricOrigin = "provider" | "import" | "personal";
 export type TimingKind = "supplied" | "unsynced";
 export type RuntimeMode = "native" | "fixture";
+export type LookupStatus =
+  | "idle"
+  | "waiting"
+  | "loading"
+  | "ready"
+  | "offline"
+  | "not_found"
+  | "instrumental"
+  | "insufficient_metadata"
+  | "failed";
 export type PlaybackStatus = "playing" | "paused" | "buffering" | "stopped" | "unknown";
 
 /**
@@ -110,7 +135,10 @@ export interface RuntimeSnapshot {
   capabilities: Capabilities;
   closeNotice: boolean;
   generation: Counter;
+  offline: boolean;
+  overlayVisible: boolean;
   players: PlayerInfo[];
+  reader: ReaderState;
   revision: Counter;
   schema: number;
   selectedSessionId?: string | null;
@@ -132,6 +160,16 @@ export interface PlayerInfo {
   enabled: boolean;
   id: PlayerId;
   name: string;
+}
+export interface ReaderState {
+  activeLine?: number | null;
+  cached: boolean;
+  countdownSeconds?: Counter | null;
+  message: string;
+  positionAvailable: boolean;
+  retryAfterMs?: Counter | null;
+  status: LookupStatus;
+  version?: LyricVersion | null;
 }
 export interface PlaybackSnapshot {
   observedAtMs: Counter;

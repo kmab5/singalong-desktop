@@ -62,6 +62,22 @@ impl Repository {
     }
 
     pub fn resolve(&mut self, incoming: Recording, previous: Option<String>) -> Result<Recording> {
+        self.match_recording(incoming, previous, true)?
+            .ok_or(StorageError::Invalid("recording was not resolved"))
+    }
+    pub fn find(
+        &mut self,
+        incoming: Recording,
+        previous: Option<String>,
+    ) -> Result<Option<Recording>> {
+        self.match_recording(incoming, previous, false)
+    }
+    fn match_recording(
+        &mut self,
+        incoming: Recording,
+        previous: Option<String>,
+        create: bool,
+    ) -> Result<Option<Recording>> {
         if incoming.title.trim().is_empty()
             || incoming.title.len() > 16384
             || incoming.artists.len() > 100
@@ -131,6 +147,9 @@ impl Repository {
                 }
             })
             .or(hinted);
+        if !create {
+            return Ok(existing.cloned());
+        }
         let recording = if let Some(existing) = existing {
             identity::enrich_missing(existing, &incoming)
         } else {
@@ -140,7 +159,7 @@ impl Repository {
         };
         tx.execute("INSERT INTO recordings(id,title_key,content) VALUES(?1,?2,?3) ON CONFLICT(id) DO UPDATE SET content=excluded.content,title_key=excluded.title_key",params![recording.id,identity::normalize(&recording.title),serde_json::to_string(&recording)?])?;
         tx.commit()?;
-        Ok(recording)
+        Ok(Some(recording))
     }
 
     pub fn save_versions(
@@ -148,6 +167,17 @@ impl Repository {
         recording_id: String,
         versions: Vec<LyricVersion>,
     ) -> Result<()> {
+        self.save_versions_checked(recording_id, versions, &|| false)
+    }
+    pub fn save_versions_checked(
+        &mut self,
+        recording_id: String,
+        versions: Vec<LyricVersion>,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<()> {
+        if cancelled() {
+            return Err(StorageError::Invalid("lookup cancelled"));
+        }
         if versions.is_empty() || versions.len() > 500 {
             return Err(StorageError::Invalid("invalid version count"));
         }
@@ -191,6 +221,9 @@ impl Repository {
                 "INSERT OR IGNORE INTO selections(recording_id,version_id) VALUES(?1,?2)",
                 params![recording_id, version.id],
             )?;
+        }
+        if cancelled() {
+            return Err(StorageError::Invalid("lookup cancelled"));
         }
         tx.commit()?;
         Ok(())

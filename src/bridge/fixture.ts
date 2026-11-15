@@ -4,6 +4,7 @@ import type { Transport } from './transport';
 export function fixtureSnapshot(): RuntimeSnapshot {
   return {
     schema: 1, revision: '1', generation: '0', trackingEnabled: false,
+    overlayVisible: false, offline: false, reader: { status: 'idle', version: null, activeLine: null, countdownSeconds: null, positionAvailable: false, cached: false, message: '', retryAfterMs: null },
     players: [], selection: { kind: 'automatic' }, selectedSessionId: 'fixture-session', statusMessage: '', startAtSignIn: false, autoOverlay: false, closeNotice: false,
     capabilities: { mode: 'fixture', platform: 'windows', trackingAvailable: false, libraryAvailable: false, reason: 'Synthetic local fixture. No players are being monitored.' },
     sessions: [{
