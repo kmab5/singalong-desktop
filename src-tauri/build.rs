@@ -3,7 +3,11 @@ fn main() {
         || std::env::var_os("CARGO_FEATURE_DESKTOP").is_some()
     {
         tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
-            tauri_build::AppManifest::new().commands(&["get_snapshot", "get_diagnostics"]),
+            tauri_build::AppManifest::new().commands(&[
+                "get_snapshot",
+                "get_diagnostics",
+                "runtime_action",
+            ]),
         ))
         .expect("build Tauri resources and permissions");
         // embed-resource targets only binaries once Cargo.toml declares a bin.

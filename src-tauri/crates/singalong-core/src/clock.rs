@@ -6,6 +6,7 @@ pub struct PlaybackClock {
     at: u64,
     status: Option<PlaybackStatus>,
     rate: Option<f64>,
+    unverified_transition: bool,
 }
 impl PlaybackClock {
     /// Called after a native refresh. UTC age is used only at receipt; elapsed advancement is monotonic.
@@ -27,6 +28,14 @@ impl PlaybackClock {
             self.raw = None;
             return None;
         }
+        if self.raw == raw
+            && (self.unverified_transition
+                || self.status.as_ref().is_some_and(|old| old != &status))
+        {
+            self.unverified_transition = true;
+            return None;
+        }
+        self.unverified_transition = false;
         let rate = rate.filter(|r| r.is_finite() && *r > 0.0 && *r <= 16.0);
         if self.raw != raw || self.status.as_ref() != Some(&status) || self.rate != rate {
             self.anchor = position.saturating_add(if status == PlaybackStatus::Playing {

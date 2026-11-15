@@ -450,7 +450,7 @@
           "required": [
             "enabled",
             "kind",
-            "player_id"
+            "playerId"
           ],
           "properties": {
             "enabled": {
@@ -462,7 +462,7 @@
                 "enable_player"
               ]
             },
-            "player_id": {
+            "playerId": {
               "$ref": "#/definitions/PlayerId"
             }
           },
@@ -550,6 +550,21 @@
               "type": "string",
               "enum": [
                 "close_to_tray"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "quit"
               ]
             }
           },
@@ -656,7 +671,7 @@
           "type": "object",
           "required": [
             "kind",
-            "player_id"
+            "playerId"
           ],
           "properties": {
             "kind": {
@@ -665,7 +680,7 @@
                 "app_pin"
               ]
             },
-            "player_id": {
+            "playerId": {
               "$ref": "#/definitions/PlayerId"
             }
           },
@@ -675,8 +690,8 @@
           "type": "object",
           "required": [
             "kind",
-            "player_id",
-            "session_id"
+            "playerId",
+            "sessionId"
           ],
           "properties": {
             "kind": {
@@ -685,10 +700,10 @@
                 "stream_pin"
               ]
             },
-            "player_id": {
+            "playerId": {
               "$ref": "#/definitions/PlayerId"
             },
-            "session_id": {
+            "sessionId": {
               "type": "string"
             }
           },

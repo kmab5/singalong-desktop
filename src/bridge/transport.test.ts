@@ -90,3 +90,9 @@ describe('shared state boundary', () => {
     expect(cleanup).toBe(1);
   });
 });
+
+it('validates camelCase pin fields emitted by Rust', () => {
+  const state = fixtureSnapshot();
+  state.selection = { kind: 'app_pin', playerId: state.sessions[0].playerId };
+  expect(new SnapshotStore().accept(state)).toBe(true);
+});

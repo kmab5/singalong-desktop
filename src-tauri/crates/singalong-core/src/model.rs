@@ -264,10 +264,13 @@ pub enum SelectionMode {
     #[default]
     Automatic,
     AppPin {
+        #[serde(rename = "playerId")]
         player_id: PlayerId,
     },
     StreamPin {
+        #[serde(rename = "playerId")]
         player_id: PlayerId,
+        #[serde(rename = "sessionId")]
         session_id: SessionId,
     },
 }
@@ -288,11 +291,24 @@ pub struct PlayerInfo {
     deny_unknown_fields
 )]
 pub enum RuntimeAction {
-    Tracking { enabled: bool },
-    EnablePlayer { player_id: PlayerId, enabled: bool },
-    Select { mode: SelectionMode },
+    Tracking {
+        enabled: bool,
+    },
+    EnablePlayer {
+        #[serde(rename = "playerId")]
+        player_id: PlayerId,
+        enabled: bool,
+    },
+    Select {
+        mode: SelectionMode,
+    },
     Discover,
-    Startup { enabled: bool },
-    AutoOverlay { enabled: bool },
+    Startup {
+        enabled: bool,
+    },
+    AutoOverlay {
+        enabled: bool,
+    },
     CloseToTray,
+    Quit,
 }

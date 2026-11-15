@@ -73,6 +73,13 @@ try {
     simultaneousSessions: Math.max(...playing.filter(event => event.event === 'session_count').map(event => event.count)),
     missingArtistObserved: chromeSnapshots(playing).some(event => event.metadata_present?.artist === false),
   };
+  if (process.argv.includes('--runtime')) {
+    await page.locator('#play').click();
+    const child = spawn('src-tauri/target/debug/examples/runtime_probe.exe', ['--synthetic-chrome'], { stdio: 'inherit' });
+    const [exit] = await once(child, 'exit');
+    if (exit !== 0) throw new Error('Native runtime integration failed');
+    report.runtimeIntegration = true;
+  }
   await browser.close(); browser = undefined;
   const after = await observe();
   report.sessionRemovedAfterExit = chromeSnapshots(after).length === 0;

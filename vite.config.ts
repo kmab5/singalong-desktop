@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
   define: { __FIXTURE__: JSON.stringify(mode === 'fixture') },
-  server: { host: '127.0.0.1', port: 1420, strictPort: true },
+  server: { host: '127.0.0.1', port: 1420, strictPort: true, watch: { ignored: ['**/src-tauri/**', '**/artifacts/**', '**/test-results/**', '**/playwright-report/**'] } },
+  optimizeDeps: { entries: ['index.html'] },
   build: { outDir: 'dist', emptyOutDir: true, target: 'es2022' },
 }));

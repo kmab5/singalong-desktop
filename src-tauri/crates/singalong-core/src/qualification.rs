@@ -7,8 +7,12 @@ pub struct Qualifier {
     listened: u64,
     sequence: u64,
     qualified: bool,
+    skip_interval: bool,
 }
 impl Qualifier {
+    pub fn suspend(&mut self) {
+        self.skip_interval = true;
+    }
     pub fn interrupt(&mut self) {
         self.previous = None;
         self.listened = 0;
@@ -40,14 +44,19 @@ impl Qualifier {
             self.listened = 0;
             self.qualified = false;
             self.sequence += 1;
-        } else if self.previous.as_ref().is_some_and(|p| {
-            p.status == PlaybackStatus::Playing && p.rate.is_none_or(|r| r.is_finite() && r > 0.0)
-        }) {
+        } else if s.status != PlaybackStatus::Unknown
+            && !self.skip_interval
+            && self.previous.as_ref().is_some_and(|p| {
+                p.status == PlaybackStatus::Playing
+                    && p.rate.is_none_or(|r| r.is_finite() && r > 0.0)
+            })
+        {
             let elapsed = now.saturating_sub(self.at);
             if elapsed <= 10000 {
                 self.listened = self.listened.saturating_add(elapsed);
             }
         }
+        self.skip_interval = false;
         self.previous = Some(s.clone());
         self.at = now;
         if !self.qualified && self.listened >= 10000 {

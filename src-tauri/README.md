@@ -27,3 +27,5 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --locked --workspace --all-fea
 ```
 
 Add `--offline` when dependencies are already cached. Build artifacts stay in `src-tauri/target/`; generated Tauri schemas are ignored. The Rust-derived frontend schema/types/validator are committed source artifacts, regenerated with `npm run contract:generate` and checked with `npm run contract:check`. No build touches `docs/`. Browser tests run with `npm run test:e2e`; bridge tests with `npm run test -- --run`.
+
+P2 integration: build the examples with `cargo build --manifest-path src-tauri/Cargo.toml --locked --offline --features desktop --examples`, then run `node scripts/probe-browser.mjs --runtime`. This uses isolated synthetic Chrome playback and a temporary SQLite database. It does not change the installed app's tracking preferences or register startup. See `plan/evidence/tracking.md` for lifecycle limits.

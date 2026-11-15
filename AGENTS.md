@@ -2,7 +2,7 @@
 
 ## Current scope
 
-This repository has P0 feasibility probes and verified P1.1 application foundation and P1.2 storage; P2 tracking is next. The product scope was confirmed after grilling on 2026-11-13. The native shell runs, but playback tracking, lookup and a usable Preview A are not implemented. Start with [plan/README.md](plan/README.md), the authoritative [confirmed release scope](plan/09-confirmed-release-scope.md), and [foundation evidence](plan/evidence/foundation.md). Do not describe planned features as shipped.
+This repository has P0 feasibility probes and verified P1.1 application foundation and P1.2 storage; P2.1 tracking is implemented and P2.2 lifecycle is partially verified. The product scope was confirmed after grilling on 2026-11-13. The native shell tracks enabled Windows sessions and records qualified plays. Lookup and a usable Preview A are not implemented; P2.2 reader-dependent controls and native gates remain open. See [tracking evidence](plan/evidence/tracking.md). Start with [plan/README.md](plan/README.md), the authoritative [confirmed release scope](plan/09-confirmed-release-scope.md), and [foundation evidence](plan/evidence/foundation.md). Do not describe planned features as shipped.
 
 The Android reference is the sibling repository `../singalong`, audited at commit `453068332bb58e3d642d294ef861ba6ccd337952` (1.3.0). See the source map and pinned links in the audit. Treat it as read-only unless work there is explicitly requested. Its historical release authorizations do not authorize desktop publication.
 

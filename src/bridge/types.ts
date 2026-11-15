@@ -8,7 +8,7 @@ export type RuntimeAction =
   | {
       enabled: boolean;
       kind: "enable_player";
-      player_id: PlayerId;
+      playerId: PlayerId;
     }
   | {
       kind: "select";
@@ -27,6 +27,9 @@ export type RuntimeAction =
     }
   | {
       kind: "close_to_tray";
+    }
+  | {
+      kind: "quit";
     };
 export type Platform = "windows" | "linux" | "macos";
 export type SelectionMode =
@@ -35,12 +38,12 @@ export type SelectionMode =
     }
   | {
       kind: "app_pin";
-      player_id: PlayerId;
+      playerId: PlayerId;
     }
   | {
       kind: "stream_pin";
-      player_id: PlayerId;
-      session_id: string;
+      playerId: PlayerId;
+      sessionId: string;
     };
 export type FailureCode =
   | "invalid_input"

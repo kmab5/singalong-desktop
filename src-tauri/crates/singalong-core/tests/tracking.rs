@@ -181,3 +181,49 @@ fn clock_keeps_anchor_refreshes_seek_and_freezes_unverifiable_position() {
         None
     );
 }
+
+#[test]
+fn unchanged_timeline_on_pause_resume_is_unverifiable_not_a_new_anchor() {
+    let mut clock = PlaybackClock::default();
+    clock.refresh(Some((1000, 1)), PlaybackStatus::Playing, Some(1.0), 0, 0);
+    assert_eq!(
+        clock.refresh(
+            Some((1000, 1)),
+            PlaybackStatus::Playing,
+            Some(1.0),
+            5000,
+            5000
+        ),
+        Some(6000)
+    );
+    assert_eq!(
+        clock.refresh(
+            Some((1000, 1)),
+            PlaybackStatus::Paused,
+            Some(1.0),
+            5000,
+            5000
+        ),
+        None
+    );
+    assert_eq!(
+        clock.refresh(
+            Some((1000, 1)),
+            PlaybackStatus::Playing,
+            Some(1.0),
+            10000,
+            10000
+        ),
+        None
+    );
+    assert_eq!(
+        clock.refresh(
+            Some((6000, 2)),
+            PlaybackStatus::Playing,
+            Some(1.0),
+            10000,
+            0
+        ),
+        Some(6000)
+    );
+}

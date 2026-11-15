@@ -101,13 +101,15 @@ Evidence: [P1.2 storage and identity verification](evidence/storage.md).
 **Consumes:** Adapter mapping, settings and storage.
 **Produces:** Authoritative current snapshot, eligible sessions and once-per-occurrence history writes.
 
-- [ ] Adapt PlayerSelector tests to sticky paused ownership and waiting app/stream pins; port CollectionQualifier tests with injectable monotonic and wall clocks.
-- [ ] Implement scoped adapter start/stop/event cleanup and a serialized tracking coordinator.
-- [ ] Support enabled-app allowlisting (new apps unchecked), sticky automatic selection, persistent app pins and reliably identified stream pins. Unavailable/disallowed pins wait without fallback; browser ambiguity refuses stream pinning.
-- [ ] Test 6 seconds play + 14 pause + 4 play → one qualified occurrence; seek-ahead → no early qualification.
-- [ ] Test app pin across restart, ambiguous stream reconnect, no silent stream-to-app widening, and refresh-before-freeze for unverifiable position.
-- [ ] Reconcile suspend/resume and reset unobserved intervals; prevent duplicate listeners/plays on rapid toggles.
-- [ ] Gate: real native snapshots drive the app and synthetic history tests pass.
+- [x] Adapt PlayerSelector tests to sticky paused ownership and waiting app/stream pins; port CollectionQualifier tests with injectable monotonic and wall clocks.
+- [x] Implement scoped adapter start/stop/event cleanup and a serialized tracking coordinator.
+- [x] Support enabled-app allowlisting (new apps unchecked), sticky automatic selection, persistent app pins and reliably identified stream pins. Unavailable/disallowed pins wait without fallback; browser ambiguity refuses stream pinning.
+- [x] Test 6 seconds play + 14 pause + 4 play → one qualified occurrence; seek-ahead → no early qualification.
+- [x] Test app pin across restart, ambiguous stream reconnect, no silent stream-to-app widening, and refresh-before-freeze for unverifiable position.
+- [x] Reconcile suspend/resume and reset unobserved intervals; prevent duplicate listeners/plays on rapid toggles.
+- [x] Gate: real native snapshots drive the app and synthetic history tests pass.
+
+Evidence: [P2 tracking and lifecycle](evidence/tracking.md). Native integration passed with synthetic Chrome and live Media Player rendering; the complete P0 compatibility matrix is still open.
 
 ### P2.2 — Build setup, tray and shutdown
 
@@ -115,9 +117,11 @@ Evidence: [P1.2 storage and identity verification](evidence/storage.md).
 **Consumes:** Tracking API and capability report.
 **Produces:** Explicit tracking controls independent of reader visibility.
 
-- [ ] Show discovered/supported players and explain unavailable timing.
-- [ ] Add tray Show, Start/Stop tracking, Show/Hide lyrics, click-through recovery, Reset position and Quit.
-- [ ] Resume prior tracking on explicit launch, explain first close-to-tray and add opt-in Windows sign-in startup (off by default, tray launch). Keep auto-show overlay opt-in and manual hiding authoritative.
+- [x] Show discovered players and explain unavailable timing without claiming untested player support.
+- [x] Add tray Show, Start/Stop tracking, main-window Reset position and Quit.
+- [ ] Connect Show/Hide lyrics, click-through recovery and overlay Reset position when P4 creates the reader.
+- [x] Resume prior tracking on explicit launch, explain first close-to-tray and implement opt-in Windows sign-in startup (off by default, tray launch).
+- [ ] Verify actual sign-in registration/login, lock/suspend transitions and native Quit UI. Keep auto-show overlay opt-in and manual hiding authoritative when P4 connects it.
 - [ ] Test stop while startup is pending, quit while fetching, second-instance launch and closed main window.
 - [ ] Gate: closing a reader does not accidentally stop collection; Quit actually stops all app-owned work.
 

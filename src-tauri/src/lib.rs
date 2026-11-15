@@ -1,21 +1,42 @@
 //! Application construction and shared P0 probe utilities.
 pub mod commands;
+pub mod platform;
+pub mod runtime;
 pub mod storage;
 
 #[cfg(feature = "desktop")]
+mod windows;
+#[cfg(feature = "desktop")]
 pub fn run() {
+    use tauri::{Emitter, Manager};
     tauri::Builder::default()
-        .manage(commands::RuntimeState::default())
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            windows::show(app)
+        }))
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--tray"]),
+        ))
         .invoke_handler(tauri::generate_handler![
             commands::get_snapshot,
-            commands::get_diagnostics
+            commands::get_diagnostics,
+            commands::runtime_action
         ])
         .setup(|app| {
-            use tauri::Manager;
             let app_data = app.path().app_data_dir()?;
             std::fs::create_dir_all(&app_data)?;
-            app.manage(storage::Storage::open(app_data.join("library.sqlite"))?);
-            tauri::WebviewWindowBuilder::new(
+            let db = storage::Storage::open(app_data.join("library.sqlite"))?;
+            let handle = app.handle().clone();
+            let runtime = runtime::Runtime::native(
+                db.clone(),
+                std::sync::Arc::new(move |snapshot| {
+                    let _ = handle.emit("runtime-state", snapshot);
+                }),
+            )
+            .map_err(std::io::Error::other)?;
+            app.manage(runtime.clone());
+            app.manage(db.clone());
+            let window = tauri::WebviewWindowBuilder::new(
                 app,
                 "main",
                 tauri::WebviewUrl::App("index.html".into()),
@@ -24,11 +45,39 @@ pub fn run() {
             .inner_size(1120.0, 760.0)
             .min_inner_size(620.0, 480.0)
             .center()
+            .visible(!std::env::args().any(|arg| arg == "--tray"))
             .build()?;
+            windows::tray(app)?;
+            #[cfg(windows)]
+            windows::hooks::install(window.hwnd()?, app.handle().clone())?;
+            let close_window = window.clone();
+            window.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    // Settings read on a blocking task; the window event thread stays responsive.
+                    let db = db.clone();
+                    let runtime = runtime.clone();
+                    let window = close_window.clone();
+                    tauri::async_runtime::spawn_blocking(move || match db.settings() {
+                        Ok(settings) if settings.close_notice_ack => {
+                            let _ = window.hide();
+                        }
+                        _ => {
+                            runtime.close_notice();
+                            let _ = window.show();
+                        }
+                    });
+                }
+            });
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("run Singalong");
+        .build(tauri::generate_context!())
+        .expect("build Singalong")
+        .run(|app, event| {
+            if matches!(event, tauri::RunEvent::ExitRequested { .. }) {
+                app.state::<runtime::Runtime>().shutdown();
+            }
+        });
 }
 
 /// WinRT TimeSpan uses signed 100 ns ticks. Invalid positions remain unavailable.
